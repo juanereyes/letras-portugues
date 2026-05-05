@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Por Você</title>
+  <desc id="desc">Ilustração musical com céu vermelho, estrada e gestos de promessa.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <path d="M0 0h640v230H0z" fill="#9b1b30"/>
+  <circle cx="514" cy="84" r="54" fill="#d7a536"/>
+  <path d="M0 250c96-42 174-42 234 0s132 42 216 0 146-42 190 0v170H0z" fill="#ffffff"/>
+  <path d="M284 420 336 238h52l82 182z" fill="#172124" opacity=".16"/>
+  <path d="M320 420 344 238" stroke="#2f5f9f" stroke-width="16" stroke-linecap="round"/>
+  <path d="M162 190c58 56 116 56 174 0" fill="none" stroke="#f7f5ef" stroke-width="18" stroke-linecap="round"/>
+  <path d="M368 190c34 34 74 34 120 0" fill="none" stroke="#f7f5ef" stroke-width="18" stroke-linecap="round"/>
+  <path d="M178 304c36-24 70-24 102 0s66 24 102 0" fill="none" stroke="#1d7773" stroke-width="12" stroke-linecap="round"/>
+  <text x="320" y="116" text-anchor="middle" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="56" font-weight="800">Por Você</text>
+</svg>

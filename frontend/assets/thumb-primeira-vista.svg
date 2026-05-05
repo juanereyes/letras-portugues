@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">À Primeira Vista</title>
+  <desc id="desc">Ilustração abstrata de um olhar iluminado e formas musicais.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <path d="M96 220c62-82 132-123 210-123s158 41 238 123c-80 82-160 123-238 123S158 302 96 220z" fill="#ffffff" stroke="#172124" stroke-width="12"/>
+  <circle cx="320" cy="220" r="68" fill="#2f5f9f"/>
+  <circle cx="320" cy="220" r="28" fill="#172124"/>
+  <circle cx="350" cy="190" r="16" fill="#f7f5ef"/>
+  <path d="M126 94c44-28 82-28 114 0" fill="none" stroke="#d7a536" stroke-width="16" stroke-linecap="round"/>
+  <path d="M414 328c44 28 82 28 114 0" fill="none" stroke="#9b1b30" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="500" cy="104" r="38" fill="#1d7773" opacity=".92"/>
+  <text x="320" y="70" text-anchor="middle" fill="#172124" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="800">À Primeira Vista</text>
+</svg>

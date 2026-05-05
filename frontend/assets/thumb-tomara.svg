@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Tomara</title>
+  <desc id="desc">Ilustração serena com flores, ondas e formas musicais.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <circle cx="510" cy="92" r="58" fill="#d7a536"/>
+  <path d="M0 294c78-42 150-42 216 0s136 42 212 0 148-42 212 0v126H0z" fill="#1d7773" opacity=".22"/>
+  <path d="M128 244c42-36 88-36 138 0s98 36 146 0 84-36 118 0" fill="none" stroke="#2f5f9f" stroke-width="14" stroke-linecap="round"/>
+  <path d="M230 210c-30-58 18-112 90-62 72-50 120 4 90 62-20 40-58 68-90 94-32-26-70-54-90-94z" fill="#9b1b30"/>
+  <path d="M188 118c28-26 58-26 90 0" fill="none" stroke="#172124" stroke-width="12" stroke-linecap="round" opacity=".3"/>
+  <text x="320" y="370" text-anchor="middle" fill="#172124" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="800">Tomara</text>
+</svg>

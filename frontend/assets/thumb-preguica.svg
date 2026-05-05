@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title">
+  <title id="title">Arte musical percussiva em vermelho e dourado</title>
+  <rect width="800" height="500" fill="#9b1b30"/>
+  <circle cx="185" cy="190" r="118" fill="#d7a536"/>
+  <circle cx="520" cy="250" r="190" fill="#1d7773"/>
+  <path d="M0 380 C130 340 220 420 350 375 C500 322 620 340 800 275 L800 500 L0 500 Z" fill="#172124"/>
+  <g fill="#ffffff" opacity=".88">
+    <rect x="98" y="72" width="24" height="210" rx="12"/>
+    <rect x="146" y="72" width="24" height="210" rx="12"/>
+    <rect x="194" y="72" width="24" height="210" rx="12"/>
+  </g>
+  <text x="52" y="438" fill="#ffffff" font-family="Arial, sans-serif" font-size="60" font-weight="800">Preguiça</text>
+</svg>

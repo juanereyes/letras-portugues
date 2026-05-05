@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title">
+  <title id="title">Arte para ordenar a letra de Bom dia, boa tarde e boa noite</title>
+  <rect width="800" height="500" fill="#f7f5ef"/>
+  <rect x="0" y="0" width="267" height="500" fill="#d7a536"/>
+  <rect x="267" y="0" width="266" height="500" fill="#1d7773"/>
+  <rect x="533" y="0" width="267" height="500" fill="#172124"/>
+  <circle cx="134" cy="136" r="62" fill="#fff6d4"/>
+  <circle cx="400" cy="138" r="62" fill="#f7f5ef"/>
+  <path d="M606 98 C588 172 638 224 720 210 C684 254 610 257 568 204 C526 150 548 86 606 58 C603 70 603 84 606 98 Z" fill="#f7f5ef"/>
+  <g fill="none" stroke="#9b1b30" stroke-width="13" stroke-linecap="round">
+    <path d="M84 318 H714"/>
+    <path d="M120 364 H678"/>
+    <path d="M156 410 H642"/>
+  </g>
+  <text x="54" y="462" fill="#ffffff" font-family="Arial, sans-serif" font-size="48" font-weight="800">Bom dia, boa tarde...</text>
+</svg>

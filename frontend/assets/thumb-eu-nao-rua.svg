@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title">
+  <title id="title">Arte de rua e porta para completar a letra</title>
+  <rect width="800" height="500" fill="#f7f5ef"/>
+  <path d="M0 340 L350 170 L800 340 V500 H0 Z" fill="#1d7773"/>
+  <path d="M360 500 L435 210 L520 500 Z" fill="#172124"/>
+  <rect x="80" y="95" width="210" height="260" rx="8" fill="#9b1b30"/>
+  <rect x="128" y="145" width="116" height="210" fill="#f7f5ef"/>
+  <circle cx="224" cy="252" r="9" fill="#d7a536"/>
+  <g fill="#2f5f9f">
+    <rect x="560" y="110" width="54" height="170" rx="8"/>
+    <rect x="638" y="150" width="54" height="130" rx="8"/>
+  </g>
+  <text x="52" y="438" fill="#172124" font-family="Arial, sans-serif" font-size="52" font-weight="800">Eu nao sou...</text>
+</svg>

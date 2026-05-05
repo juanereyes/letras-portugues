@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Ordenar a letra | Português com Música</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html#home" aria-label="Página inicial de Português com Música">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="index.html#songs">Músicas</a>
+        <a href="progress.html">Progresso</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main class="game-page" id="gamePage">
+      <section class="game-shell" aria-labelledby="lyricGameTitle">
+        <div class="lyric-game-header">
+          <div>
+            <p class="eyebrow" id="gameCourse"></p>
+            <h1 id="lyricGameTitle"></h1>
+            <p id="gameArtist" class="game-subtitle"></p>
+          </div>
+          <div class="listen-panel">
+            <span id="listenStatus">Envie sua primeira tentativa antes de ouvir</span>
+            <button id="playSongButton" class="primary-action" type="button" hidden>Ouvir para revisar</button>
+            <button id="restartActivityButton" class="secondary-action" type="button" hidden>Recomeçar atividade</button>
+          </div>
+        </div>
+
+        <audio id="lyricAudio"></audio>
+        <section id="reviewInstructions" class="review-instructions" hidden>
+          <h2>Revisão no YouTube</h2>
+          <p>
+            Abra o link do YouTube e ouça uma vez enquanto compara com a ordem
+            corrigida abaixo. Quando terminar a revisão, volte para esta aba.
+            Para tentar de novo, use Recomeçar atividade.
+          </p>
+        </section>
+        <p id="audioNotice" class="audio-notice" hidden></p>
+
+        <ol id="lyricList" class="lyric-list" aria-label="Trechos da letra para arrastar"></ol>
+
+        <div class="game-actions">
+          <button id="submitLyricOrder" class="primary-action" type="button">Enviar primeira tentativa</button>
+          <button id="resetLyricOrder" class="secondary-action" type="button">Embaralhar de novo</button>
+        </div>
+        <p id="gameFeedback" class="game-feedback" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <div id="instructionOverlay" class="instruction-overlay">
+      <div class="instruction-box" role="dialog" aria-modal="true" aria-labelledby="instructionTitle">
+        <button id="closeInstructions" class="icon-button" type="button" aria-label="Fechar instruções">&times;</button>
+        <p class="eyebrow">Como jogar</p>
+        <h2 id="instructionTitle">Envie primeiro. Depois ouça.</h2>
+        <p id="instructionText">
+          Comece arrastando os trechos da letra para a ordem que você acha correta,
+          sem ouvir a música antes. Envie sua primeira tentativa para verificar cada
+          posição. Depois do envio, aparecerá um botão para abrir a música e revisar.
+          Para tentar novamente, recomece a atividade inteira.
+        </p>
+      </div>
+    </div>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="lyric-order.js"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Sopa</title>
+  <desc id="desc">Ilustração colorida de uma tigela de sopa com legumes.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <circle cx="142" cy="92" r="58" fill="#d7a536"/>
+  <circle cx="508" cy="86" r="44" fill="#1d7773" opacity=".9"/>
+  <path d="M110 258c22 76 95 120 210 120s188-44 210-120H110z" fill="#2f5f9f"/>
+  <ellipse cx="320" cy="250" rx="230" ry="86" fill="#ffffff"/>
+  <ellipse cx="320" cy="250" rx="190" ry="56" fill="#f2b24f"/>
+  <circle cx="238" cy="236" r="20" fill="#e44848"/>
+  <circle cx="302" cy="266" r="18" fill="#78a946"/>
+  <circle cx="384" cy="236" r="17" fill="#7b3f98"/>
+  <path d="M456 260c24 8 52 25 72 52" fill="none" stroke="#172124" stroke-width="16" stroke-linecap="round"/>
+  <text x="320" y="132" text-anchor="middle" fill="#172124" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="800">Sopa</text>
+</svg>

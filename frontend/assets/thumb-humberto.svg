@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Na casa do seu Humberto</title>
+  <desc id="desc">Ilustração de uma casa com telhado, goiabas e música.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <circle cx="522" cy="84" r="54" fill="#d7a536"/>
+  <path d="M116 218 320 76l204 142v142H116z" fill="#ffffff" stroke="#172124" stroke-width="10"/>
+  <path d="M92 222 320 60l228 162" fill="none" stroke="#9b1b30" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="258" y="250" width="72" height="110" fill="#2f5f9f"/>
+  <rect x="372" y="248" width="72" height="70" fill="#1d7773"/>
+  <circle cx="178" cy="150" r="20" fill="#78a946"/>
+  <circle cx="214" cy="174" r="16" fill="#78a946"/>
+  <circle cx="190" cy="196" r="14" fill="#78a946"/>
+  <path d="M176 244c24 28 56 28 96 0" fill="none" stroke="#172124" stroke-width="10" stroke-linecap="round" opacity=".3"/>
+  <text x="320" y="392" text-anchor="middle" fill="#172124" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800">Seu Humberto</text>
+</svg>

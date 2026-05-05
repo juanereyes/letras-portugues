@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+portuguese_music.sqlite3
+auth.sqlite3
+catalog.sqlite3
+progress.sqlite3
+*.log
+data/*.sqlite3
+data/*.log

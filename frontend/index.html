@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Português com Música</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Página inicial de Português com Música">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="#songs">Músicas</a>
+        <a href="progress.html">Progresso</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main id="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Prática de português com música</p>
+          <h1 id="hero-title">Aprenda com músicas, vocabulário, gramática e cultura.</h1>
+          <p>
+            Um espaço para quatro cursos de português do MIT, organizado por tipo
+            de jogo, tema e progresso dos estudantes.
+          </p>
+        </div>
+
+        <section class="carousel" aria-label="Músicas em destaque">
+          <div class="carousel-main">
+            <img id="featuredImage" src="" alt="" />
+            <div class="carousel-caption">
+              <p id="featuredCourse"></p>
+              <h2 id="featuredTitle"></h2>
+              <p id="featuredMeta"></p>
+              <a id="featuredLink" class="play-link" href="lyric-order.html?song=bom-dia-order-1">Começar jogo</a>
+            </div>
+          </div>
+          <div class="carousel-controls" aria-label="Controles do carrossel">
+            <button id="previousFeature" type="button" aria-label="Música anterior em destaque">&lsaquo;</button>
+            <div id="featureDots" class="feature-dots" aria-label="Posição da música em destaque"></div>
+            <button id="nextFeature" type="button" aria-label="Próxima música em destaque">&rsaquo;</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace" id="songs" aria-labelledby="songs-title">
+        <aside class="filters" aria-label="Filtros de músicas e jogos">
+          <h2 id="songs-title">Explorar jogos</h2>
+
+          <label for="courseFilter">Curso</label>
+          <select id="courseFilter"></select>
+
+          <label for="topicFilter">Tema</label>
+          <select id="topicFilter"></select>
+
+          <label for="gameTypeFilter">Tipo de jogo</label>
+          <select id="gameTypeFilter"></select>
+        </aside>
+
+        <section class="game-browser" aria-live="polite">
+          <div class="browser-header">
+            <div>
+              <p class="eyebrow">Organizado por tipo de jogo</p>
+              <h2 id="browserTitle">Todos os jogos</h2>
+            </div>
+            <p id="resultCount"></p>
+          </div>
+
+          <div id="gameGroups" class="game-groups"></div>
+        </section>
+      </section>
+
+    </main>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

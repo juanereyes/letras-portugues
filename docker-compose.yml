@@ -1,0 +1,77 @@
+services:
+  gateway:
+    build: .
+    command: python backend/gateway/server.py
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      FRONTEND_ROOT: /app/frontend
+      CATALOG_DB_PATH: /data/catalog.sqlite3
+      AUTH_BASE_URL: http://auth:8101
+      PROGRESS_BASE_URL: http://progress:8102
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token-change-me}
+    ports:
+      - "8000:8000"
+    volumes:
+      - catalog-data:/data
+    depends_on:
+      auth:
+        condition: service_started
+      progress:
+        condition: service_started
+    networks:
+      - public
+      - auth-net
+      - progress-net
+
+  auth:
+    build: .
+    command: python backend/auth/service.py
+    environment:
+      HOST: 0.0.0.0
+      AUTH_PORT: 8101
+      AUTH_DB_PATH: /data/auth.sqlite3
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token-change-me}
+    expose:
+      - "8101"
+    volumes:
+      - auth-data:/data
+    networks:
+      - auth-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os, urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8101/internal/auth/me', headers={'X-Internal-Token': os.environ['INTERNAL_TOKEN']}), timeout=2)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  progress:
+    build: .
+    command: python backend/progress/service.py
+    environment:
+      HOST: 0.0.0.0
+      PROGRESS_PORT: 8102
+      PROGRESS_DB_PATH: /data/progress.sqlite3
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token-change-me}
+    expose:
+      - "8102"
+    volumes:
+      - progress-data:/data
+    networks:
+      - progress-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os, urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8102/internal/progress?userId=0', headers={'X-Internal-Token': os.environ['INTERNAL_TOKEN']}), timeout=2)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  catalog-data:
+  auth-data:
+  progress-data:
+
+networks:
+  public:
+  auth-net:
+    internal: true
+  progress-net:
+    internal: true

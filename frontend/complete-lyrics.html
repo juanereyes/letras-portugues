@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Completar a letra | Português com Música</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html#home" aria-label="Página inicial de Português com Música">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="index.html#songs">Músicas</a>
+        <a href="progress.html">Progresso</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main class="game-page" id="gamePage">
+      <section class="game-shell" aria-labelledby="completeGameTitle">
+        <div class="lyric-game-header">
+          <div>
+            <p class="eyebrow" id="gameCourse"></p>
+            <h1 id="completeGameTitle"></h1>
+            <p id="gameArtist" class="game-subtitle"></p>
+          </div>
+          <div class="listen-panel">
+            <span id="listenStatus">Abra a música antes de digitar</span>
+            <a id="watchSongButton" class="primary-action" href="#" target="_blank" rel="noopener">Abrir YouTube</a>
+            <button id="restartActivityButton" class="secondary-action" type="button">Recomeçar atividade</button>
+          </div>
+        </div>
+
+        <section class="review-instructions">
+          <h2>Ouça e depois complete os espaços</h2>
+          <p>
+            Primeiro, abra o link do YouTube. Depois disso, os espaços serão
+            liberados. Digite uma palavra em cada espaço e envie para verificar
+            ortografia e acentos.
+          </p>
+        </section>
+
+        <div id="clozeLyrics" class="cloze-lyrics" aria-label="Complete as palavras que faltam na letra"></div>
+
+        <div class="game-actions">
+          <button id="submitCompleteLyrics" class="primary-action" type="button" disabled>Verificar respostas</button>
+          <button id="showCompleteAnswers" class="secondary-action" type="button" hidden>Mostrar respostas</button>
+        </div>
+        <p id="gameFeedback" class="game-feedback" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <div id="instructionOverlay" class="instruction-overlay">
+      <div class="instruction-box" role="dialog" aria-modal="true" aria-labelledby="instructionTitle">
+        <button id="closeInstructions" class="icon-button" type="button" aria-label="Fechar instruções">&times;</button>
+        <p class="eyebrow">Como jogar</p>
+        <h2 id="instructionTitle">Complete a letra.</h2>
+        <p id="instructionText">
+          Primeiro, abra o link da música no YouTube. Os espaços serão liberados
+          depois disso. Complete cada palavra que falta e verifique suas respostas.
+          Verde significa resposta exata; amarelo significa que a palavra está certa,
+          mas os acentos precisam de atenção; vermelho significa que vale revisar a
+          letra de novo. Depois da correção, você pode mostrar as respostas exatas
+          ou recomeçar sem revelá-las.
+        </p>
+      </div>
+    </div>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="complete-lyrics.js"></script>
+  </body>
+</html>

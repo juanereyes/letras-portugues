@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Valsinha</title>
+  <desc id="desc">Ilustração de um casal dançando uma valsa em uma praça iluminada.</desc>
+  <rect width="640" height="420" fill="#f7f5ef"/>
+  <circle cx="520" cy="92" r="56" fill="#d7a536"/>
+  <path d="M0 318c92-46 178-46 258 0s170 46 270 0 142-44 112 0v102H0z" fill="#1d7773" opacity=".22"/>
+  <path d="M132 330h376" stroke="#172124" stroke-width="12" stroke-linecap="round" opacity=".18"/>
+  <circle cx="274" cy="150" r="28" fill="#172124"/>
+  <circle cx="366" cy="150" r="28" fill="#172124"/>
+  <path d="M264 184c-34 44-58 94-72 150h122l26-118-22-32z" fill="#2f5f9f"/>
+  <path d="M376 184c34 44 58 94 72 150H326l-26-118 22-32z" fill="#9b1b30"/>
+  <path d="M294 206c30 34 58 34 86 0" fill="none" stroke="#172124" stroke-width="12" stroke-linecap="round"/>
+  <path d="M246 254c42-18 86-18 132 0" fill="none" stroke="#d7a536" stroke-width="10" stroke-linecap="round"/>
+  <text x="320" y="82" text-anchor="middle" fill="#172124" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="800">Valsinha</text>
+</svg>
