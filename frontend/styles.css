@@ -761,6 +761,89 @@ h2 {
   object-fit: cover;
 }
 
+.song-preview-panel {
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.song-preview-panel[hidden] {
+  display: none;
+}
+
+.song-preview-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.song-preview-card {
+  align-self: start;
+}
+
+.song-game-preview {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.song-game-preview h3 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+.song-preview-mode {
+  display: grid;
+  gap: 12px;
+}
+
+.song-preview-mode h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.preview-lyric-blocks {
+  display: grid;
+  gap: 10px;
+  padding-left: 24px;
+}
+
+.preview-lyric-blocks li {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  white-space: pre-line;
+}
+
+.seed-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.seed-preview summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.seed-preview pre {
+  max-height: 300px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+}
+
 .combo-field {
   position: relative;
   display: grid;
@@ -1460,7 +1543,8 @@ button:disabled {
   .progress-row,
   .inline-form-row,
   .field-grid,
-  .thumbnail-upload-preview {
+  .thumbnail-upload-preview,
+  .song-preview-grid {
     grid-template-columns: 1fr;
   }
 

@@ -15,6 +15,20 @@ async function apiRequest(path, options = {}) {
   return payload;
 }
 
+const adminSongStoreKey = "ptMusicAdminSongs";
+
+function loadAdminSongs() {
+  return JSON.parse(localStorage.getItem(adminSongStoreKey) || "[]");
+}
+
+function mergeAdminSongs(payload) {
+  const baseSongs = Array.isArray(payload.songs) ? payload.songs : [];
+  const adminSongs = loadAdminSongs();
+  const merged = new Map(baseSongs.map((song) => [song.id, song]));
+  adminSongs.forEach((song) => merged.set(song.id, song));
+  return { ...payload, songs: [...merged.values()] };
+}
+
 window.backend = {
   async getMe() {
     return apiRequest("/api/me");
@@ -22,11 +36,11 @@ window.backend = {
 
   async getSongs() {
     try {
-      return await apiRequest("/api/songs");
+      return mergeAdminSongs(await apiRequest("/api/songs"));
     } catch (error) {
       const response = await fetch("songs.seed.json", { cache: "no-store" });
       if (!response.ok) throw error;
-      return response.json();
+      return mergeAdminSongs(await response.json());
     }
   },
 
@@ -68,5 +82,12 @@ window.backend = {
       method: "POST",
       body: JSON.stringify({ username })
     });
+  },
+
+  async saveAdminSong(song) {
+    const songs = loadAdminSongs().filter((candidate) => candidate.id !== song.id);
+    songs.push(song);
+    localStorage.setItem(adminSongStoreKey, JSON.stringify(songs));
+    return { song };
   }
 };

@@ -19,6 +19,13 @@ const promoteModalFeedback = document.querySelector("#promoteModalFeedback");
 const promoteFeedback = document.querySelector("#promoteFeedback");
 const songGameMode = document.querySelector("#songGameMode");
 const songModeFields = document.querySelector("#songModeFields");
+const songBuilderForm = document.querySelector("#songBuilderForm");
+const previewSongButton = document.querySelector("#previewSongButton");
+const songBuilderFeedback = document.querySelector("#songBuilderFeedback");
+const songPreviewPanel = document.querySelector("#songPreviewPanel");
+const confirmSongButton = document.querySelector("#confirmSongButton");
+const editSongButton = document.querySelector("#editSongButton");
+const songPreviewFeedback = document.querySelector("#songPreviewFeedback");
 const userStoreKey = "ptMusicUser";
 
 const state = {
@@ -27,7 +34,30 @@ const state = {
   topicOptions: [],
   topicComboOpen: false,
   wordSelectTokens: [],
-  completeLyricsTokens: []
+  wordSelectConfirmed: false,
+  completeLyricsTokens: [],
+  completeLyricsConfirmed: false,
+  thumbnailPreviewUrl: "assets/thumb-default.svg",
+  thumbnailLoading: false,
+  pendingSong: null
+};
+
+const modeMeta = {
+  "lyric-order": {
+    gameType: "Ordenar a letra",
+    idSuffix: "order",
+    description: "Organize os trechos da letra antes de ouvir a música."
+  },
+  "complete-lyrics": {
+    gameType: "Completar a letra",
+    idSuffix: "complete",
+    description: "Ouça a música e complete as palavras que faltam."
+  },
+  "word-select": {
+    gameType: "Selecionar palavras",
+    idSuffix: "word-select",
+    description: "Ouça a música e selecione palavras de uma categoria."
+  }
 };
 
 function loadUser() {
@@ -95,6 +125,14 @@ function setupForms() {
   });
 
   songGameMode.addEventListener("change", renderSongModeFields);
+  songBuilderForm.addEventListener("input", resetSongPreview);
+  songBuilderForm.addEventListener("change", resetSongPreview);
+  previewSongButton.addEventListener("click", previewSongSubmission);
+  confirmSongButton.addEventListener("click", confirmSongSubmission);
+  editSongButton.addEventListener("click", () => {
+    songPreviewPanel.hidden = true;
+    songPreviewFeedback.textContent = "";
+  });
   setupSelectComboFields();
   renderSongModeFields();
 }
@@ -173,6 +211,8 @@ function renderProgress(progress) {
 
 function renderSongModeFields() {
   const mode = songGameMode.value;
+  resetSongBuilderState();
+  resetSongPreview();
   if (!mode) {
     songModeFields.innerHTML = `<p class="empty-state">Selecione um modo de jogo para configurar os campos da música.</p>`;
     return;
@@ -259,6 +299,13 @@ function setupCompleteLyricsBuilder() {
   if (!lyricsInput || !stageButton || !submitButton || !feedback) return;
 
   state.completeLyricsTokens = [];
+  state.completeLyricsConfirmed = false;
+  lyricsInput.addEventListener("input", () => {
+    state.completeLyricsTokens = [];
+    state.completeLyricsConfirmed = false;
+    submitButton.disabled = true;
+    document.querySelector("#completeLyricsPreview").hidden = true;
+  });
   setupCompleteGlobalHintsToggle();
   stageButton.addEventListener("click", () => stageCompleteLyrics(lyricsInput, submitButton, feedback));
   submitButton.addEventListener("click", () => submitCompleteLyricsBlanks(feedback));
@@ -285,6 +332,7 @@ function stageCompleteLyrics(lyricsInput, submitButton, feedback) {
   }
 
   state.completeLyricsTokens = parseAdminSelectableLyrics(lyrics);
+  state.completeLyricsConfirmed = false;
   submitButton.disabled = false;
   feedback.textContent = "Letra preparada. Clique nas palavras que devem virar lacunas.";
   renderAdminCompleteLyrics();
@@ -328,6 +376,7 @@ function toggleAdminCompleteBlank(tokenId) {
   const token = state.completeLyricsTokens.find((item) => item.id === tokenId);
   if (!token || token.type !== "word") return;
   token.selected = !token.selected;
+  state.completeLyricsConfirmed = false;
   renderAdminCompleteLyrics();
 }
 
@@ -337,6 +386,7 @@ function submitCompleteLyricsBlanks(feedback) {
     feedback.textContent = "Selecione pelo menos uma palavra para virar lacuna.";
     return;
   }
+  state.completeLyricsConfirmed = true;
   feedback.textContent = `${blankCount} ${blankCount === 1 ? "lacuna selecionada" : "lacunas selecionadas"} para o jogo.`;
 }
 
@@ -348,6 +398,13 @@ function setupWordSelectBuilder() {
   if (!lyricsInput || !stageButton || !submitButton || !feedback) return;
 
   state.wordSelectTokens = [];
+  state.wordSelectConfirmed = false;
+  lyricsInput.addEventListener("input", () => {
+    state.wordSelectTokens = [];
+    state.wordSelectConfirmed = false;
+    submitButton.disabled = true;
+    document.querySelector("#wordSelectPreview").hidden = true;
+  });
   stageButton.addEventListener("click", () => stageWordSelectLyrics(lyricsInput, submitButton, feedback));
   submitButton.addEventListener("click", () => submitWordSelectionTargets(feedback));
 }
@@ -360,6 +417,7 @@ function stageWordSelectLyrics(lyricsInput, submitButton, feedback) {
   }
 
   state.wordSelectTokens = parseAdminSelectableLyrics(lyrics);
+  state.wordSelectConfirmed = false;
   submitButton.disabled = false;
   feedback.textContent = "Letra preparada. Clique nas palavras que os estudantes devem selecionar.";
   renderAdminSelectableLyrics();
@@ -413,6 +471,7 @@ function toggleAdminSelectableWord(tokenId) {
   const token = state.wordSelectTokens.find((item) => item.id === tokenId);
   if (!token || token.type !== "word") return;
   token.selected = !token.selected;
+  state.wordSelectConfirmed = false;
   renderAdminSelectableLyrics();
 }
 
@@ -422,6 +481,7 @@ function submitWordSelectionTargets(feedback) {
     feedback.textContent = "Selecione pelo menos uma palavra antes de enviar.";
     return;
   }
+  state.wordSelectConfirmed = true;
   feedback.textContent = `${selectedCount} ${selectedCount === 1 ? "palavra selecionada" : "palavras selecionadas"} para o jogo.`;
 }
 
@@ -540,14 +600,331 @@ function setupThumbnailUploadPreview() {
   input.addEventListener("change", () => {
     const [file] = input.files;
     if (!file) {
-      preview.src = "assets/thumb-default.svg";
+      state.thumbnailPreviewUrl = "assets/thumb-default.svg";
+      state.thumbnailLoading = false;
+      preview.src = state.thumbnailPreviewUrl;
       feedback.textContent = "Sem imagem enviada. A miniatura usará o fundo preto padrão.";
       return;
     }
 
-    preview.src = URL.createObjectURL(file);
-    feedback.textContent = `Arquivo selecionado: ${file.name}`;
+    state.thumbnailLoading = true;
+    feedback.textContent = `Carregando arquivo: ${file.name}`;
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      state.thumbnailPreviewUrl = reader.result;
+      preview.src = state.thumbnailPreviewUrl;
+      state.thumbnailLoading = false;
+      feedback.textContent = `Arquivo selecionado: ${file.name}`;
+    });
+    reader.addEventListener("error", () => {
+      state.thumbnailPreviewUrl = "assets/thumb-default.svg";
+      preview.src = state.thumbnailPreviewUrl;
+      state.thumbnailLoading = false;
+      feedback.textContent = "Não foi possível carregar a imagem. A miniatura usará o fundo preto padrão.";
+    });
+    reader.readAsDataURL(file);
   });
+}
+
+function resetSongBuilderState() {
+  state.wordSelectTokens = [];
+  state.wordSelectConfirmed = false;
+  state.completeLyricsTokens = [];
+  state.completeLyricsConfirmed = false;
+  state.thumbnailPreviewUrl = "assets/thumb-default.svg";
+  state.thumbnailLoading = false;
+  state.pendingSong = null;
+}
+
+function resetSongPreview() {
+  state.pendingSong = null;
+  if (songPreviewPanel) songPreviewPanel.hidden = true;
+  if (songPreviewFeedback) songPreviewFeedback.textContent = "";
+  if (songBuilderFeedback) songBuilderFeedback.textContent = "";
+}
+
+function previewSongSubmission() {
+  const song = buildSongFromForm();
+  if (!song) return;
+
+  state.pendingSong = song;
+  renderSongPreview(song);
+  songPreviewPanel.hidden = false;
+  songPreviewFeedback.textContent = "Confira a miniatura e a atividade antes de confirmar.";
+  songPreviewPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function confirmSongSubmission() {
+  if (!state.pendingSong) {
+    songPreviewFeedback.textContent = "Gere a prévia antes de confirmar o envio.";
+    return;
+  }
+
+  confirmSongButton.disabled = true;
+  songPreviewFeedback.textContent = "Registrando música...";
+  try {
+    const { song } = await window.backend.saveAdminSong(state.pendingSong);
+    state.songs = [...state.songs.filter((candidate) => candidate.id !== song.id), song];
+    state.topicOptions = getTopicOptions();
+    songPreviewFeedback.textContent = "Música registrada com todos os campos necessários.";
+  } catch (error) {
+    confirmSongButton.disabled = false;
+    songPreviewFeedback.textContent = error.message;
+  }
+}
+
+function buildSongFromForm() {
+  songBuilderFeedback.textContent = "";
+  const youtubeInput = document.querySelector("#youtubeWatchLink");
+  const youtubeFeedback = document.querySelector("#youtubeWatchFeedback");
+  if (youtubeInput && youtubeFeedback) normalizeYoutubeWatchLink(youtubeInput, youtubeFeedback);
+  if (state.thumbnailLoading) {
+    songBuilderFeedback.textContent = "Aguarde a imagem da miniatura carregar antes de gerar a prévia.";
+    return null;
+  }
+
+  if (!songBuilderForm.reportValidity()) {
+    songBuilderFeedback.textContent = "Complete todos os campos obrigatórios antes de gerar a prévia.";
+    return null;
+  }
+
+  const gameKind = songGameMode.value;
+  const meta = modeMeta[gameKind];
+  if (!meta) {
+    songBuilderFeedback.textContent = "Selecione um modo de jogo.";
+    return null;
+  }
+
+  const title = document.querySelector("#songTitle").value.trim();
+  const song = {
+    id: createSongId(title, gameKind),
+    songTitle: title,
+    artist: document.querySelector("#songAuthor").value.trim(),
+    course: document.querySelector("#songCourse").value,
+    topic: document.querySelector("#songTopic").value.trim(),
+    gameType: meta.gameType,
+    gameKind,
+    highlighted: true,
+    thumbnail: getThumbnailPath(),
+    gameUrl: `${gameKind}.html?song=${createSongId(title, gameKind)}`,
+    youtubeWatchUrl: youtubeInput.value.trim(),
+    description: meta.description,
+    instructionTitle: document.querySelector("#songInstructionTitle").value.trim(),
+    instructionText: document.querySelector("#songInstructionText").value.trim()
+  };
+
+  const modeFields = buildModeSpecificFields(gameKind);
+  if (!modeFields) return null;
+  return { ...song, ...modeFields };
+}
+
+function buildModeSpecificFields(gameKind) {
+  if (gameKind === "lyric-order") return buildLyricOrderFields();
+  if (gameKind === "complete-lyrics") return buildCompleteLyricsFields();
+  if (gameKind === "word-select") return buildWordSelectFields();
+  return null;
+}
+
+function buildLyricOrderFields() {
+  const countInput = document.querySelector("#lyricBlockCount");
+  const feedback = document.querySelector("#lyricBlockFeedback");
+  const blockCount = Number(countInput?.value);
+  if (!Number.isInteger(blockCount) || blockCount < 1) {
+    songBuilderFeedback.textContent = "Informe um número inteiro positivo para a quantidade de blocos.";
+    countInput?.focus();
+    return null;
+  }
+
+  const chunks = [...document.querySelectorAll("#lyricBlockFields textarea")].map((field) => field.value.trim());
+  if (chunks.length !== blockCount || chunks.some((chunk) => !chunk)) {
+    songBuilderFeedback.textContent = "Preencha todos os blocos da letra antes de gerar a prévia.";
+    feedback.textContent = "Todos os blocos precisam estar preenchidos.";
+    return null;
+  }
+
+  return { lyricChunks: chunks };
+}
+
+function buildCompleteLyricsFields() {
+  const selectedCount = state.completeLyricsTokens.filter((token) => token.type === "word" && token.selected).length;
+  if (!state.completeLyricsTokens.length) {
+    songBuilderFeedback.textContent = "Prepare a letra antes de gerar a prévia.";
+    document.querySelector("#completeLyricsText")?.focus();
+    return null;
+  }
+  if (!selectedCount) {
+    songBuilderFeedback.textContent = "Selecione pelo menos uma palavra para virar lacuna.";
+    return null;
+  }
+  if (!state.completeLyricsConfirmed) {
+    songBuilderFeedback.textContent = "Envie as lacunas selecionadas antes de gerar a prévia.";
+    return null;
+  }
+
+  const usesGlobalHints = document.querySelector("#completeUsesGlobalHints")?.checked;
+  const globalHints = document.querySelector("#completeGlobalHints")?.value.trim() || "";
+  if (usesGlobalHints && !globalHints) {
+    songBuilderFeedback.textContent = "Preencha as dicas globais antes de gerar a prévia.";
+    document.querySelector("#completeGlobalHints")?.focus();
+    return null;
+  }
+
+  const clozeLyrics = tokensToSeedLyrics(state.completeLyricsTokens);
+  return { clozeLyrics: usesGlobalHints ? `${globalHints}\n\n${clozeLyrics}` : clozeLyrics };
+}
+
+function buildWordSelectFields() {
+  const selectedCount = state.wordSelectTokens.filter((token) => token.type === "word" && token.selected).length;
+  if (!state.wordSelectTokens.length) {
+    songBuilderFeedback.textContent = "Prepare a letra antes de gerar a prévia.";
+    document.querySelector("#wordSelectLyrics")?.focus();
+    return null;
+  }
+  if (!selectedCount) {
+    songBuilderFeedback.textContent = "Selecione pelo menos uma palavra para a atividade.";
+    return null;
+  }
+  if (!state.wordSelectConfirmed) {
+    songBuilderFeedback.textContent = "Envie a seleção de palavras antes de gerar a prévia.";
+    return null;
+  }
+
+  return { selectableLyrics: tokensToSeedLyrics(state.wordSelectTokens) };
+}
+
+function tokensToSeedLyrics(tokens) {
+  return tokens.map((token) => (token.type === "word" && token.selected ? `[${token.value}]` : token.value)).join("");
+}
+
+function getThumbnailPath() {
+  const input = document.querySelector("#songThumbnail");
+  const [file] = input?.files || [];
+  if (!file) return "assets/thumb-default.svg";
+  return state.thumbnailPreviewUrl;
+}
+
+function createSongId(title, gameKind) {
+  const base = `${slugify(title)}-${modeMeta[gameKind].idSuffix}`;
+  let suffix = 1;
+  let candidate = `${base}-${suffix}`;
+  const existingIds = new Set(state.songs.map((song) => song.id));
+  while (existingIds.has(candidate) && state.pendingSong?.id !== candidate) {
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+  return candidate;
+}
+
+function slugify(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-") || "musica";
+}
+
+function renderSongPreview(song) {
+  confirmSongButton.disabled = false;
+  document.querySelector("#previewThumbnail").src = state.thumbnailPreviewUrl;
+  document.querySelector("#previewCardTitle").textContent = song.songTitle;
+  document.querySelector("#previewCardMeta").textContent = `${song.course} / ${song.gameType}`;
+  document.querySelector("#previewCardTopic").textContent = `${song.artist} - ${song.topic}`;
+  document.querySelector("#previewGameCourse").textContent = `${song.course} / ${song.gameType}`;
+  document.querySelector("#previewGameTitle").textContent = song.songTitle;
+  document.querySelector("#previewGameArtist").textContent = song.artist;
+  document.querySelector("#previewInstructionTitle").textContent = song.instructionTitle;
+  document.querySelector("#previewInstructionText").textContent = song.instructionText;
+
+  const body = document.querySelector("#previewGameBody");
+  body.innerHTML = "";
+  if (song.gameKind === "lyric-order") renderLyricOrderPreview(body, song);
+  if (song.gameKind === "complete-lyrics") renderCompleteLyricsPreview(body, song);
+  if (song.gameKind === "word-select") renderWordSelectPreview(body, song);
+  renderSeedObjectPreview(body, song);
+}
+
+function renderLyricOrderPreview(container, song) {
+  const section = document.createElement("section");
+  section.className = "song-preview-mode";
+  const title = document.createElement("h4");
+  title.textContent = "Blocos em ordem correta";
+  const list = document.createElement("ol");
+  list.className = "preview-lyric-blocks";
+  song.lyricChunks.forEach((chunk) => {
+    const item = document.createElement("li");
+    item.textContent = chunk;
+    list.append(item);
+  });
+  section.append(title, list);
+  container.append(section);
+}
+
+function renderCompleteLyricsPreview(container, song) {
+  const section = document.createElement("section");
+  section.className = "song-preview-mode";
+  const title = document.createElement("h4");
+  title.textContent = "Prévia das lacunas";
+  const lyrics = document.createElement("div");
+  lyrics.className = "cloze-lyrics admin-cloze-preview";
+  renderBracketedLyrics(lyrics, song.clozeLyrics, "complete");
+  section.append(title, lyrics);
+  container.append(section);
+}
+
+function renderWordSelectPreview(container, song) {
+  const section = document.createElement("section");
+  section.className = "song-preview-mode";
+  const title = document.createElement("h4");
+  title.textContent = "Prévia das palavras selecionadas";
+  const lyrics = document.createElement("div");
+  lyrics.className = "selectable-lyrics admin-selectable-preview";
+  renderBracketedLyrics(lyrics, song.selectableLyrics, "select");
+  section.append(title, lyrics);
+  container.append(section);
+}
+
+function renderBracketedLyrics(container, text, mode) {
+  const pattern = /\[([^\]]+)\]/g;
+  let cursor = 0;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > cursor) container.append(document.createTextNode(text.slice(cursor, match.index)));
+    if (mode === "complete") {
+      const blank = document.createElement("span");
+      blank.className = "cloze-blank admin-cloze-blank";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = match[1];
+      input.disabled = true;
+      const result = document.createElement("span");
+      result.className = "blank-result";
+      result.textContent = "x";
+      blank.append(input, result);
+      container.append(blank);
+    } else {
+      const word = document.createElement("button");
+      word.type = "button";
+      word.className = "selectable-word is-selected";
+      word.disabled = true;
+      word.textContent = match[1];
+      container.append(word);
+    }
+    cursor = pattern.lastIndex;
+  }
+  if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
+}
+
+function renderSeedObjectPreview(container, song) {
+  const details = document.createElement("details");
+  details.className = "seed-preview";
+  const summary = document.createElement("summary");
+  summary.textContent = "Objeto que será registrado";
+  const code = document.createElement("pre");
+  code.textContent = JSON.stringify(song, null, 2);
+  details.append(summary, code);
+  container.append(details);
 }
 
 function renderSongInstructionFields() {

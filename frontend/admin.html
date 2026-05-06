@@ -90,7 +90,44 @@
               <button class="select-combo-toggle" type="button" aria-label="Mostrar modos de jogo"></button>
             </span>
             <div id="songModeFields" class="song-mode-fields" aria-live="polite"></div>
+            <div class="game-actions">
+              <button id="previewSongButton" class="primary-action" type="button">Pré-visualizar música</button>
+            </div>
+            <p id="songBuilderFeedback" class="game-feedback" aria-live="polite"></p>
           </form>
+          <section id="songPreviewPanel" class="song-preview-panel" hidden>
+            <div>
+              <p class="eyebrow">Prévia</p>
+              <h3>Confira antes de enviar</h3>
+            </div>
+            <div class="song-preview-grid">
+              <article class="game-card song-preview-card">
+                <span class="thumb-wrap">
+                  <img id="previewThumbnail" src="assets/thumb-default.svg" alt="Prévia da miniatura" />
+                </span>
+                <span class="card-body">
+                  <strong id="previewCardTitle"></strong>
+                  <span id="previewCardMeta"></span>
+                  <span id="previewCardTopic"></span>
+                </span>
+              </article>
+              <article class="song-game-preview">
+                <p id="previewGameCourse" class="eyebrow"></p>
+                <h3 id="previewGameTitle"></h3>
+                <p id="previewGameArtist" class="admin-muted"></p>
+                <section class="review-instructions">
+                  <h2 id="previewInstructionTitle"></h2>
+                  <p id="previewInstructionText"></p>
+                </section>
+                <div id="previewGameBody"></div>
+              </article>
+            </div>
+            <div class="game-actions">
+              <button id="confirmSongButton" class="primary-action" type="button">Confirmar envio</button>
+              <button id="editSongButton" class="secondary-action" type="button">Editar</button>
+            </div>
+            <p id="songPreviewFeedback" class="game-feedback" aria-live="polite"></p>
+          </section>
         </div>
       </section>
     </main>
