@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Miniatura padrão</title>
+  <desc id="desc">Fundo preto usado quando uma música não tem miniatura personalizada.</desc>
+  <rect width="800" height="500" fill="#000000"/>
+</svg>

@@ -719,6 +719,22 @@ h2 {
   font-weight: 800;
 }
 
+.thumbnail-upload-preview {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.thumbnail-upload-preview img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #000;
+  object-fit: cover;
+}
+
 .combo-field {
   position: relative;
   display: grid;
@@ -1402,7 +1418,8 @@ button:disabled {
   .lyric-chunk,
   .progress-row,
   .inline-form-row,
-  .field-grid {
+  .field-grid,
+  .thumbnail-upload-preview {
     grid-template-columns: 1fr;
   }
 

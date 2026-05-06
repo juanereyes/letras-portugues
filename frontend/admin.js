@@ -223,6 +223,7 @@ function renderSongModeFields() {
   setupYoutubeWatchLinkValidation();
   setupTopicCombobox();
   setupSelectComboFields(songModeFields);
+  setupThumbnailUploadPreview();
 }
 
 function setupSelectComboFields(root = document) {
@@ -283,8 +284,35 @@ function renderCommonSongFields() {
         <input id="youtubeWatchLink" name="youtubeWatchLink" type="url" placeholder="https://www.youtube.com/watch?v=<código>" required />
       </label>
       <p id="youtubeWatchFeedback" class="field-feedback" aria-live="polite"></p>
+      <label>
+        <span>Imagem da miniatura</span>
+        <input id="songThumbnail" name="thumbnail" type="file" accept="image/*" />
+      </label>
+      <div class="thumbnail-upload-preview">
+        <img id="songThumbnailPreview" src="assets/thumb-default.svg" alt="Prévia da miniatura" />
+        <p id="songThumbnailFeedback" class="field-feedback">Sem imagem enviada. A miniatura usará o fundo preto padrão.</p>
+      </div>
     </section>
   `;
+}
+
+function setupThumbnailUploadPreview() {
+  const input = document.querySelector("#songThumbnail");
+  const preview = document.querySelector("#songThumbnailPreview");
+  const feedback = document.querySelector("#songThumbnailFeedback");
+  if (!input || !preview || !feedback) return;
+
+  input.addEventListener("change", () => {
+    const [file] = input.files;
+    if (!file) {
+      preview.src = "assets/thumb-default.svg";
+      feedback.textContent = "Sem imagem enviada. A miniatura usará o fundo preto padrão.";
+      return;
+    }
+
+    preview.src = URL.createObjectURL(file);
+    feedback.textContent = `Arquivo selecionado: ${file.name}`;
+  });
 }
 
 function renderSongInstructionFields() {
