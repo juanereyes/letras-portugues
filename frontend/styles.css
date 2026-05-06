@@ -637,6 +637,76 @@ h2 {
   align-self: start;
 }
 
+.admin-management-workspace {
+  align-items: stretch;
+}
+
+.admin-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-choice-panel {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-choice-panel strong {
+  display: block;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.admin-choice-panel span:last-child {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.song-management-list {
+  display: grid;
+  gap: 12px;
+}
+
+.song-management-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.song-management-row img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  background: #000;
+  object-fit: cover;
+}
+
+.song-management-row strong,
+.song-management-row small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.song-management-row small {
+  color: var(--muted);
+}
+
+.song-management-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .admin-form,
 .admin-results {
   display: grid;
@@ -1219,6 +1289,21 @@ h2 {
   color: var(--ink);
   cursor: pointer;
   font-weight: 800;
+  text-decoration: none;
+}
+
+.danger-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid rgba(186, 58, 73, 0.35);
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #fff1f2;
+  color: var(--ruby);
+  cursor: pointer;
+  font-weight: 800;
 }
 
 button:disabled {
@@ -1544,8 +1629,18 @@ button:disabled {
   .inline-form-row,
   .field-grid,
   .thumbnail-upload-preview,
-  .song-preview-grid {
+  .song-preview-grid,
+  .song-management-row,
+  .admin-choice-grid {
     grid-template-columns: 1fr;
+  }
+
+  .song-management-actions {
+    justify-content: stretch;
+  }
+
+  .song-management-actions > * {
+    flex: 1;
   }
 
   .chunk-result {

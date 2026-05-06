@@ -44,8 +44,13 @@ function loadGame() {
   document.querySelector("#gameCourse").textContent = `${game.course} / ${game.gameType}`;
   document.querySelector("#completeGameTitle").textContent = game.songTitle;
   document.querySelector("#gameArtist").textContent = game.artist;
-  document.querySelector("#watchSongButton").href = game.youtubeWatchUrl || "#";
+  document.querySelector("#watchSongButton").href = getSafeYouTubeUrl(game.youtubeWatchUrl);
   applyInstructions();
+}
+
+function getSafeYouTubeUrl(url) {
+  const value = String(url || "");
+  return /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+$/.test(value) ? value : "#";
 }
 
 function applyInstructions() {

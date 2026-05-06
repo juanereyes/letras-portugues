@@ -4,8 +4,10 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+import base64
 import json
 import os
+import re
 import sqlite3
 
 
@@ -13,6 +15,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_ROOT = Path(os.environ.get("FRONTEND_ROOT", PROJECT_ROOT / "frontend"))
 DATA_ROOT = Path(os.environ.get("DATA_ROOT", PROJECT_ROOT / "data"))
 CATALOG_DB_PATH = Path(os.environ.get("CATALOG_DB_PATH", DATA_ROOT / "catalog.sqlite3"))
+ASSET_ROOT = FRONTEND_ROOT / "assets"
+THUMBNAIL_UPLOAD_ROOT = ASSET_ROOT / "uploads"
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "8000"))
 AUTH_BASE_URL = os.environ.get("AUTH_BASE_URL", "http://127.0.0.1:8101")
@@ -69,6 +73,11 @@ def init_catalog_db():
               song_id TEXT PRIMARY KEY REFERENCES songs(id) ON DELETE CASCADE,
               lyrics TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS deleted_songs (
+              song_id TEXT PRIMARY KEY,
+              deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
         ensure_catalog_columns(db)
@@ -85,7 +94,12 @@ def ensure_catalog_columns(db):
 
 def seed_songs(db):
     seed_catalog = load_seed_catalog()
+    deleted_ids = {row["song_id"] for row in db.execute("SELECT song_id FROM deleted_songs").fetchall()}
     seed_ids = [game["id"] for game in seed_catalog]
+
+    if deleted_ids:
+        placeholders = ", ".join("?" for _ in deleted_ids)
+        db.execute(f"DELETE FROM songs WHERE id IN ({placeholders})", list(deleted_ids))
 
     if seed_ids:
         placeholders = ", ".join("?" for _ in seed_ids)
@@ -95,6 +109,8 @@ def seed_songs(db):
         )
 
     for index, game in enumerate(seed_catalog):
+        if game["id"] in deleted_ids:
+            continue
         db.execute(
             """
             INSERT INTO songs (
@@ -103,23 +119,7 @@ def seed_songs(db):
               instruction_title, instruction_text, audio_src, sort_order
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              song_title = excluded.song_title,
-              artist = excluded.artist,
-              course = excluded.course,
-              topic = excluded.topic,
-              game_type = excluded.game_type,
-              game_kind = excluded.game_kind,
-              highlighted = excluded.highlighted,
-              thumbnail = excluded.thumbnail,
-              game_url = excluded.game_url,
-              youtube_watch_url = excluded.youtube_watch_url,
-              description = excluded.description,
-              instruction_title = excluded.instruction_title,
-              instruction_text = excluded.instruction_text,
-              audio_src = excluded.audio_src,
-              sort_order = excluded.sort_order,
-              updated_at = CURRENT_TIMESTAMP
+            ON CONFLICT(id) DO NOTHING
             """,
             (
                 game["id"],
@@ -140,6 +140,9 @@ def seed_songs(db):
                 index,
             ),
         )
+
+        if db.execute("SELECT changes() AS changes_count").fetchone()["changes_count"] == 0:
+            continue
 
         db.execute("DELETE FROM lyric_chunks WHERE song_id = ?", (game["id"],))
         for chunk_index, chunk in enumerate(game.get("lyricChunks", [])):
@@ -198,6 +201,139 @@ def song_payload(row, lyric_chunks=None, cloze_lyrics=None, selectable_lyrics=No
     if selectable_lyrics is not None:
         payload["selectableLyrics"] = selectable_lyrics
     return payload
+
+
+MODE_CONFIG = {
+    "lyric-order": {
+        "game_type": "Ordenar a letra",
+        "description": "Organize os trechos da letra antes de ouvir a música.",
+        "mode_field": "lyricChunks",
+    },
+    "complete-lyrics": {
+        "game_type": "Completar a letra",
+        "description": "Ouça a música e complete as palavras que faltam.",
+        "mode_field": "clozeLyrics",
+    },
+    "word-select": {
+        "game_type": "Selecionar palavras",
+        "description": "Ouça a música e selecione palavras de uma categoria.",
+        "mode_field": "selectableLyrics",
+    },
+}
+
+IMAGE_EXTENSIONS = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+}
+
+
+def clean_text(value):
+    return str(value or "").strip()
+
+
+def validate_song_payload(payload):
+    if not isinstance(payload, dict):
+        return None, "Dados da música inválidos."
+
+    game_kind = clean_text(payload.get("gameKind"))
+    config = MODE_CONFIG.get(game_kind)
+    if not config:
+        return None, "Modo de jogo inválido."
+
+    required_fields = [
+        "id",
+        "songTitle",
+        "artist",
+        "course",
+        "topic",
+        "youtubeWatchUrl",
+        "instructionTitle",
+        "instructionText",
+    ]
+    cleaned = {field: clean_text(payload.get(field)) for field in required_fields}
+    if any(not cleaned[field] for field in required_fields):
+        return None, "Complete todos os campos obrigatórios."
+
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", cleaned["id"]):
+        return None, "Identificador da música inválido."
+
+    if not re.fullmatch(r"https://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]+", cleaned["youtubeWatchUrl"]):
+        return None, "Use um link do YouTube no formato correto."
+
+    song = {
+        "id": cleaned["id"],
+        "songTitle": cleaned["songTitle"],
+        "artist": cleaned["artist"],
+        "course": cleaned["course"],
+        "topic": cleaned["topic"],
+        "gameType": config["game_type"],
+        "gameKind": game_kind,
+        "highlighted": bool(payload.get("highlighted", True)),
+        "thumbnail": clean_text(payload.get("thumbnail")) or "assets/thumb-default.svg",
+        "gameUrl": f"{game_kind}.html?song={cleaned['id']}",
+        "youtubeWatchUrl": cleaned["youtubeWatchUrl"],
+        "description": clean_text(payload.get("description")) or config["description"],
+        "instructionTitle": cleaned["instructionTitle"],
+        "instructionText": cleaned["instructionText"],
+    }
+
+    if game_kind == "lyric-order":
+        chunks = payload.get("lyricChunks")
+        if not isinstance(chunks, list) or not chunks or any(not clean_text(chunk) for chunk in chunks):
+            return None, "Preencha todos os blocos da letra."
+        song["lyricChunks"] = [clean_text(chunk) for chunk in chunks]
+    elif game_kind == "complete-lyrics":
+        cloze_lyrics = clean_text(payload.get("clozeLyrics"))
+        if not cloze_lyrics or "[" not in cloze_lyrics or "]" not in cloze_lyrics:
+            return None, "Envie a letra com as lacunas confirmadas."
+        song["clozeLyrics"] = cloze_lyrics
+    elif game_kind == "word-select":
+        selectable_lyrics = clean_text(payload.get("selectableLyrics"))
+        if not selectable_lyrics or "[" not in selectable_lyrics or "]" not in selectable_lyrics:
+            return None, "Envie a letra com as palavras confirmadas."
+        song["selectableLyrics"] = selectable_lyrics
+
+    return song, None
+
+
+def save_thumbnail(song_id, thumbnail):
+    if not thumbnail or thumbnail == "assets/thumb-default.svg":
+        return "assets/thumb-default.svg"
+
+    if not thumbnail.startswith("data:image/"):
+        is_asset_path = re.fullmatch(r"assets/[A-Za-z0-9_./-]+\.(svg|png|jpe?g|gif|webp)", thumbnail)
+        if not is_asset_path or ".." in thumbnail:
+            raise ValueError("Caminho da miniatura inválido.")
+        return thumbnail
+
+    header, separator, encoded = thumbnail.partition(",")
+    if not separator:
+        raise ValueError("Imagem da miniatura inválida.")
+
+    mime_match = re.fullmatch(r"data:(image/[A-Za-z0-9.+-]+);base64", header)
+    if not mime_match:
+        raise ValueError("Formato da miniatura inválido.")
+
+    mime_type = mime_match.group(1).lower()
+    extension = IMAGE_EXTENSIONS.get(mime_type)
+    if not extension:
+        raise ValueError("Formato de imagem não aceito para a miniatura.")
+
+    try:
+        image_bytes = base64.b64decode(encoded, validate=True)
+    except ValueError as error:
+        raise ValueError("Imagem da miniatura inválida.") from error
+
+    if len(image_bytes) > 2 * 1024 * 1024:
+        raise ValueError("A miniatura deve ter no máximo 2 MB.")
+
+    THUMBNAIL_UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    file_name = f"{song_id}.{extension}"
+    (THUMBNAIL_UPLOAD_ROOT / file_name).write_bytes(image_bytes)
+    return f"assets/uploads/{file_name}"
 
 
 class GatewayHandler(SimpleHTTPRequestHandler):
@@ -272,6 +408,40 @@ class GatewayHandler(SimpleHTTPRequestHandler):
             if payload is None:
                 return
             self.delegate_auth("POST", "/internal/auth/promote", payload)
+            return
+        if route == "/api/admin/songs":
+            admin = self.require_admin()
+            if not admin:
+                return
+            payload = self.read_json_body()
+            if payload is None:
+                return
+            self.handle_admin_song_create(payload)
+            return
+        self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
+
+    def do_PUT(self):
+        route = urlparse(self.path).path
+        if route.startswith("/api/admin/songs/"):
+            admin = self.require_admin()
+            if not admin:
+                return
+            song_id = route.rsplit("/", 1)[-1]
+            payload = self.read_json_body()
+            if payload is None:
+                return
+            self.handle_admin_song_update(song_id, payload)
+            return
+        self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
+
+    def do_DELETE(self):
+        route = urlparse(self.path).path
+        if route.startswith("/api/admin/songs/"):
+            admin = self.require_admin()
+            if not admin:
+                return
+            song_id = route.rsplit("/", 1)[-1]
+            self.handle_admin_song_delete(song_id)
             return
         self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
 
@@ -381,6 +551,140 @@ class GatewayHandler(SimpleHTTPRequestHandler):
             for row in rows
         ]
         self.send_json({"songs": songs})
+
+    def handle_admin_song_create(self, payload):
+        song, error = validate_song_payload(payload)
+        if error:
+            self.send_json({"error": error}, HTTPStatus.BAD_REQUEST)
+            return
+
+        try:
+            song["thumbnail"] = save_thumbnail(song["id"], song.get("thumbnail"))
+        except ValueError as thumbnail_error:
+            self.send_json({"error": str(thumbnail_error)}, HTTPStatus.BAD_REQUEST)
+            return
+        except OSError:
+            self.send_json({"error": "Não foi possível salvar a miniatura."}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        try:
+            with connect_catalog_db() as db:
+                if db.execute("SELECT 1 FROM songs WHERE id = ?", (song["id"],)).fetchone():
+                    self.send_json({"error": "Já existe uma música com esse identificador."}, HTTPStatus.CONFLICT)
+                    return
+                next_order = db.execute("SELECT COALESCE(MAX(sort_order), -1) + 1 AS sort_order FROM songs").fetchone()[
+                    "sort_order"
+                ]
+                db.execute("DELETE FROM deleted_songs WHERE song_id = ?", (song["id"],))
+                self.save_song_record(db, song, next_order)
+        except sqlite3.Error:
+            self.send_json({"error": "Não foi possível registrar a música."}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        self.send_json({"song": song}, HTTPStatus.CREATED)
+
+    def handle_admin_song_update(self, song_id, payload):
+        song, error = validate_song_payload(payload)
+        if error:
+            self.send_json({"error": error}, HTTPStatus.BAD_REQUEST)
+            return
+        if song["id"] != song_id:
+            self.send_json({"error": "O identificador da música não pode mudar durante a edição."}, HTTPStatus.BAD_REQUEST)
+            return
+
+        try:
+            song["thumbnail"] = save_thumbnail(song["id"], song.get("thumbnail"))
+        except ValueError as thumbnail_error:
+            self.send_json({"error": str(thumbnail_error)}, HTTPStatus.BAD_REQUEST)
+            return
+        except OSError:
+            self.send_json({"error": "Não foi possível salvar a miniatura."}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        try:
+            with connect_catalog_db() as db:
+                existing = db.execute("SELECT sort_order FROM songs WHERE id = ?", (song["id"],)).fetchone()
+                if not existing:
+                    self.send_json({"error": "Música não encontrada."}, HTTPStatus.NOT_FOUND)
+                    return
+                db.execute("DELETE FROM songs WHERE id = ?", (song["id"],))
+                db.execute("DELETE FROM deleted_songs WHERE song_id = ?", (song["id"],))
+                self.save_song_record(db, song, existing["sort_order"])
+        except sqlite3.Error:
+            self.send_json({"error": "Não foi possível atualizar a música."}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        self.send_json({"song": song})
+
+    def handle_admin_song_delete(self, song_id):
+        song_id = clean_text(song_id)
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", song_id):
+            self.send_json({"error": "Identificador da música inválido."}, HTTPStatus.BAD_REQUEST)
+            return
+
+        try:
+            with connect_catalog_db() as db:
+                existing = db.execute("SELECT id FROM songs WHERE id = ?", (song_id,)).fetchone()
+                if not existing:
+                    self.send_json({"error": "Música não encontrada."}, HTTPStatus.NOT_FOUND)
+                    return
+                db.execute("DELETE FROM songs WHERE id = ?", (song_id,))
+                db.execute(
+                    "INSERT OR REPLACE INTO deleted_songs (song_id, deleted_at) VALUES (?, CURRENT_TIMESTAMP)",
+                    (song_id,),
+                )
+        except sqlite3.Error:
+            self.send_json({"error": "Não foi possível excluir a música."}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        self.send_json({"ok": True, "id": song_id})
+
+    def save_song_record(self, db, song, sort_order):
+        db.execute(
+            """
+            INSERT INTO songs (
+              id, song_title, artist, course, topic, game_type, game_kind,
+              highlighted, thumbnail, game_url, youtube_watch_url, description,
+              instruction_title, instruction_text, audio_src, sort_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                song["id"],
+                song["songTitle"],
+                song["artist"],
+                song["course"],
+                song["topic"],
+                song["gameType"],
+                song["gameKind"],
+                1 if song.get("highlighted") else 0,
+                song["thumbnail"],
+                song["gameUrl"],
+                song["youtubeWatchUrl"],
+                song["description"],
+                song["instructionTitle"],
+                song["instructionText"],
+                song.get("audioSrc"),
+                sort_order,
+            ),
+        )
+
+        if song["gameKind"] == "lyric-order":
+            for chunk_index, chunk in enumerate(song["lyricChunks"]):
+                db.execute(
+                    "INSERT INTO lyric_chunks (song_id, chunk_order, text) VALUES (?, ?, ?)",
+                    (song["id"], chunk_index, chunk),
+                )
+        elif song["gameKind"] == "complete-lyrics":
+            db.execute(
+                "INSERT INTO cloze_lyrics (song_id, lyrics) VALUES (?, ?)",
+                (song["id"], song["clozeLyrics"]),
+            )
+        elif song["gameKind"] == "word-select":
+            db.execute(
+                "INSERT INTO selectable_lyrics (song_id, lyrics) VALUES (?, ?)",
+                (song["id"], song["selectableLyrics"]),
+            )
 
 
 if __name__ == "__main__":

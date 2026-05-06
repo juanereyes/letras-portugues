@@ -44,7 +44,7 @@ function loadGame() {
   document.querySelector("#gameCourse").textContent = `${game.course} / ${game.gameType}`;
   document.querySelector("#lyricGameTitle").textContent = game.songTitle;
   document.querySelector("#gameArtist").textContent = game.artist;
-  document.querySelector("#lyricAudio").src = game.audioSrc || "";
+  document.querySelector("#lyricAudio").src = getSafeAudioSrc(game.audioSrc);
   document.querySelector("#playSongButton").textContent = game.audioSrc ? "Ouvir para revisar" : "Abrir YouTube";
   applyInstructions();
 }
@@ -76,12 +76,20 @@ function renderLyricChunks() {
     item.className = "lyric-chunk";
     item.draggable = !state.submitted;
     item.dataset.correctIndex = chunk.correctIndex;
-    item.innerHTML = `
-      <span class="drag-handle" aria-hidden="true">::</span>
-      <span class="chunk-position">${index + 1}</span>
-      <span class="chunk-text">${chunk.text.replaceAll("\n", "<br />")}</span>
-      <span class="chunk-result" aria-live="polite"></span>
-    `;
+    const handle = document.createElement("span");
+    handle.className = "drag-handle";
+    handle.setAttribute("aria-hidden", "true");
+    handle.textContent = "::";
+    const position = document.createElement("span");
+    position.className = "chunk-position";
+    position.textContent = index + 1;
+    const text = document.createElement("span");
+    text.className = "chunk-text";
+    appendMultilineText(text, chunk.text);
+    const result = document.createElement("span");
+    result.className = "chunk-result";
+    result.setAttribute("aria-live", "polite");
+    item.append(handle, position, text, result);
 
     if (state.submitted) {
       const correct = chunk.correctIndex === index;
@@ -95,6 +103,15 @@ function renderLyricChunks() {
     item.addEventListener("dragend", handleDragEnd);
     list.append(item);
   });
+}
+
+function appendMultilineText(container, value) {
+  String(value || "")
+    .split("\n")
+    .forEach((line, index) => {
+      if (index > 0) container.append(document.createElement("br"));
+      container.append(document.createTextNode(line));
+    });
 }
 
 function handleDragStart(event) {
@@ -136,8 +153,9 @@ function syncLyricOrderFromDom() {
 
 function playReview() {
   if (!state.submitted) return;
-  if (game.youtubeWatchUrl && !game.audioSrc) {
-    window.open(game.youtubeWatchUrl, "_blank", "noopener");
+  const youtubeWatchUrl = getSafeYouTubeUrl(game.youtubeWatchUrl);
+  if (youtubeWatchUrl !== "#" && !game.audioSrc) {
+    window.open(youtubeWatchUrl, "_blank", "noopener");
     return;
   }
   playSong();
@@ -155,7 +173,7 @@ function playSong() {
 }
 
 function showReviewPlayer() {
-  if (game.youtubeWatchUrl && !game.audioSrc) {
+  if (getSafeYouTubeUrl(game.youtubeWatchUrl) !== "#" && !game.audioSrc) {
     showYouTubeReviewInstructions();
     return;
   }
@@ -178,6 +196,16 @@ function showAudioNotice() {
   const notice = document.querySelector("#audioNotice");
   notice.hidden = false;
   notice.innerHTML = "Adicione <code>audioSrc</code> para reprodução controlada ou <code>youtubeWatchUrl</code> para um link de revisão no YouTube no banco de dados.";
+}
+
+function getSafeYouTubeUrl(url) {
+  const value = String(url || "");
+  return /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+$/.test(value) ? value : "#";
+}
+
+function getSafeAudioSrc(src) {
+  const value = String(src || "");
+  return /^assets\/[A-Za-z0-9_./-]+\.(mp3|ogg|wav)$/.test(value) && !value.includes("..") ? value : "";
 }
 
 function resetLyricOrder() {

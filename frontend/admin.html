@@ -30,8 +30,8 @@
     <main class="admin-page">
       <section class="progress-hero">
         <p class="eyebrow">Professor</p>
-        <h1>Área restrita para administradores.</h1>
-        <p>Consulte progresso por usuário, promova contas e prepare novos jogos musicais.</p>
+        <h1>Gerenciamento de músicas.</h1>
+        <p>Escolha se quer criar uma nova atividade ou revisar músicas já cadastradas.</p>
       </section>
 
       <section id="adminLoginRequired" class="auth-required" hidden>
@@ -46,7 +46,7 @@
         <a class="play-link" href="index.html#songs">Voltar aos jogos</a>
       </section>
 
-      <section id="adminContent" class="admin-workspace" hidden>
+      <section id="adminContent" class="admin-workspace admin-management-workspace" hidden>
         <div class="admin-panel">
           <div>
             <p class="eyebrow">Progresso de estudante</p>
@@ -73,61 +73,18 @@
           <p id="promoteFeedback" class="game-feedback" aria-live="polite"></p>
         </div>
 
-        <div class="admin-panel admin-song-panel">
-          <div>
-            <p class="eyebrow">Músicas</p>
-            <h2>Adicionar nova música</h2>
-          </div>
-          <form id="songBuilderForm" class="admin-form song-builder-form">
-            <label for="songGameMode">Modo de jogo</label>
-            <span class="select-combo-field">
-              <select id="songGameMode" name="gameMode" required>
-                <option value="">Selecione um modo</option>
-                <option value="lyric-order">Ordenar letras</option>
-                <option value="complete-lyrics">Completar letras</option>
-                <option value="word-select">Selecionar palavras</option>
-              </select>
-              <button class="select-combo-toggle" type="button" aria-label="Mostrar modos de jogo"></button>
-            </span>
-            <div id="songModeFields" class="song-mode-fields" aria-live="polite"></div>
-            <div class="game-actions">
-              <button id="previewSongButton" class="primary-action" type="button">Pré-visualizar música</button>
-            </div>
-            <p id="songBuilderFeedback" class="game-feedback" aria-live="polite"></p>
-          </form>
-          <section id="songPreviewPanel" class="song-preview-panel" hidden>
-            <div>
-              <p class="eyebrow">Prévia</p>
-              <h3>Confira antes de enviar</h3>
-            </div>
-            <div class="song-preview-grid">
-              <article class="game-card song-preview-card">
-                <span class="thumb-wrap">
-                  <img id="previewThumbnail" src="assets/thumb-default.svg" alt="Prévia da miniatura" />
-                </span>
-                <span class="card-body">
-                  <strong id="previewCardTitle"></strong>
-                  <span id="previewCardMeta"></span>
-                  <span id="previewCardTopic"></span>
-                </span>
-              </article>
-              <article class="song-game-preview">
-                <p id="previewGameCourse" class="eyebrow"></p>
-                <h3 id="previewGameTitle"></h3>
-                <p id="previewGameArtist" class="admin-muted"></p>
-                <section class="review-instructions">
-                  <h2 id="previewInstructionTitle"></h2>
-                  <p id="previewInstructionText"></p>
-                </section>
-                <div id="previewGameBody"></div>
-              </article>
-            </div>
-            <div class="game-actions">
-              <button id="confirmSongButton" class="primary-action" type="button">Confirmar envio</button>
-              <button id="editSongButton" class="secondary-action" type="button">Editar</button>
-            </div>
-            <p id="songPreviewFeedback" class="game-feedback" aria-live="polite"></p>
-          </section>
+        <div class="admin-panel admin-song-panel admin-choice-grid">
+          <a class="admin-choice-panel" href="admin-song-add.html">
+            <span class="eyebrow">Nova atividade</span>
+            <strong>Adicionar música</strong>
+            <span>Abra o formulário completo para cadastrar uma música e pré-visualizar o jogo antes de enviar.</span>
+          </a>
+
+          <a class="admin-choice-panel" href="admin-song-manage.html">
+            <span class="eyebrow">Catálogo</span>
+            <strong>Editar ou excluir músicas</strong>
+            <span>Veja as músicas existentes para ajustar informações ou remover atividades do catálogo.</span>
+          </a>
         </div>
       </section>
     </main>

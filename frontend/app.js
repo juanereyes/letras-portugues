@@ -96,14 +96,14 @@ function renderGames() {
     const gameTypes = [...group.gameTypes].sort((a, b) => a.localeCompare(b));
     const section = document.createElement("section");
     section.className = "game-group";
-    section.innerHTML = `
-      <div class="group-header">
-        <h3>${gameTypes[0] || group.heading}</h3>
-      </div>
-      <div class="card-grid"></div>
-    `;
-
-    const grid = section.querySelector(".card-grid");
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const title = document.createElement("h3");
+    title.textContent = gameTypes[0] || group.heading;
+    header.append(title);
+    const grid = document.createElement("div");
+    grid.className = "card-grid";
+    section.append(header, grid);
     getSortedGames(group.games).forEach((game) => grid.append(createGameCard(game)));
     gameGroups.append(section);
   });
@@ -127,25 +127,50 @@ function createGameCard(game) {
   const score = record?.lastScore ?? record?.score ?? null;
   const card = document.createElement("a");
   card.className = "game-card";
-  card.href = game.gameUrl || "#";
+  card.href = getSafeGameUrl(game.gameUrl);
 
-  if (!game.gameUrl) {
+  if (card.getAttribute("href") === "#") {
     card.setAttribute("aria-disabled", "true");
     card.addEventListener("click", (event) => event.preventDefault());
   }
 
-  card.innerHTML = `
-    <span class="thumb-wrap">
-      <img src="${game.thumbnail}" alt="Miniatura de ${game.songTitle}" />
-      ${score === null ? "" : `<span class="thumbnail-score ${getScoreClass(score)}">${score}%</span>`}
-    </span>
-    <span class="card-body">
-      <span class="card-meta">${game.course} / ${game.topic}</span>
-      <strong>${game.songTitle}</strong>
-      <span>${game.artist}</span>
-    </span>
-  `;
+  const thumbWrap = document.createElement("span");
+  thumbWrap.className = "thumb-wrap";
+  const image = document.createElement("img");
+  image.src = getSafeImageSrc(game.thumbnail);
+  image.alt = `Miniatura de ${game.songTitle}`;
+  thumbWrap.append(image);
+  if (score !== null) {
+    const scorePill = document.createElement("span");
+    scorePill.className = `thumbnail-score ${getScoreClass(score)}`;
+    scorePill.textContent = `${score}%`;
+    thumbWrap.append(scorePill);
+  }
+
+  const body = document.createElement("span");
+  body.className = "card-body";
+  const meta = document.createElement("span");
+  meta.className = "card-meta";
+  meta.textContent = `${game.course} / ${game.topic}`;
+  const title = document.createElement("strong");
+  title.textContent = game.songTitle;
+  const artist = document.createElement("span");
+  artist.textContent = game.artist;
+  body.append(meta, title, artist);
+  card.append(thumbWrap, body);
   return card;
+}
+
+function getSafeGameUrl(url) {
+  const value = String(url || "");
+  return /^(lyric-order|complete-lyrics|word-select)\.html\?song=[A-Za-z0-9_-]+$/.test(value) ? value : "#";
+}
+
+function getSafeImageSrc(src) {
+  const value = String(src || "");
+  if (/^assets\/[A-Za-z0-9_./-]+\.(svg|png|jpe?g|gif|webp)$/.test(value) && !value.includes("..")) return value;
+  if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value;
+  return "assets/thumb-default.svg";
 }
 
 function getScoreClass(score) {
@@ -190,15 +215,15 @@ function renderFeatured() {
 
   const game = featuredGames[featuredIndex];
   const featuredLink = document.querySelector("#featuredLink");
-  document.querySelector("#featuredImage").src = game.thumbnail;
+  document.querySelector("#featuredImage").src = getSafeImageSrc(game.thumbnail);
   document.querySelector("#featuredImage").alt = `Arte de ${game.songTitle}`;
   document.querySelector("#featuredCourse").textContent = `${game.course} / ${game.gameType}`;
   document.querySelector("#featuredTitle").textContent = game.songTitle;
   document.querySelector("#featuredMeta").textContent = `${game.artist} - ${game.topic}`;
-  featuredLink.href = game.gameUrl || "#";
-  featuredLink.toggleAttribute("aria-disabled", !game.gameUrl);
+  featuredLink.href = getSafeGameUrl(game.gameUrl);
+  featuredLink.toggleAttribute("aria-disabled", featuredLink.getAttribute("href") === "#");
   featuredLink.onclick = (event) => {
-    if (!game.gameUrl) event.preventDefault();
+    if (featuredLink.getAttribute("href") === "#") event.preventDefault();
   };
 
   [...document.querySelectorAll("#featureDots button")].forEach((dot, index) => {

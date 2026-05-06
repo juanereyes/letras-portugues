@@ -10,22 +10,48 @@ async function apiRequest(path, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || "Erro no servidor.");
+    const error = new Error(payload.error || "Erro no servidor.");
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
 
 const adminSongStoreKey = "ptMusicAdminSongs";
+const adminDeletedSongStoreKey = "ptMusicDeletedSongs";
 
 function loadAdminSongs() {
   return JSON.parse(localStorage.getItem(adminSongStoreKey) || "[]");
 }
 
+function loadDeletedSongIds() {
+  return JSON.parse(localStorage.getItem(adminDeletedSongStoreKey) || "[]");
+}
+
+function saveDeletedSongIds(songIds) {
+  localStorage.setItem(adminDeletedSongStoreKey, JSON.stringify([...new Set(songIds)]));
+}
+
+function rememberDeletedSong(songId) {
+  saveDeletedSongIds([...loadDeletedSongIds(), songId]);
+}
+
+function forgetDeletedSong(songId) {
+  saveDeletedSongIds(loadDeletedSongIds().filter((candidate) => candidate !== songId));
+}
+
+function filterDeletedSongs(payload) {
+  const deletedIds = new Set(loadDeletedSongIds());
+  const songs = Array.isArray(payload.songs) ? payload.songs.filter((song) => !deletedIds.has(song.id)) : [];
+  return { ...payload, songs };
+}
+
 function mergeAdminSongs(payload) {
-  const baseSongs = Array.isArray(payload.songs) ? payload.songs : [];
+  const deletedIds = new Set(loadDeletedSongIds());
+  const baseSongs = Array.isArray(payload.songs) ? payload.songs.filter((song) => !deletedIds.has(song.id)) : [];
   const adminSongs = loadAdminSongs();
   const merged = new Map(baseSongs.map((song) => [song.id, song]));
-  adminSongs.forEach((song) => merged.set(song.id, song));
+  adminSongs.filter((song) => !deletedIds.has(song.id)).forEach((song) => merged.set(song.id, song));
   return { ...payload, songs: [...merged.values()] };
 }
 
@@ -36,7 +62,7 @@ window.backend = {
 
   async getSongs() {
     try {
-      return mergeAdminSongs(await apiRequest("/api/songs"));
+      return filterDeletedSongs(await apiRequest("/api/songs"));
     } catch (error) {
       const response = await fetch("songs.seed.json", { cache: "no-store" });
       if (!response.ok) throw error;
@@ -85,9 +111,48 @@ window.backend = {
   },
 
   async saveAdminSong(song) {
-    const songs = loadAdminSongs().filter((candidate) => candidate.id !== song.id);
-    songs.push(song);
-    localStorage.setItem(adminSongStoreKey, JSON.stringify(songs));
-    return { song };
+    try {
+      return await apiRequest("/api/admin/songs", {
+        method: "POST",
+        body: JSON.stringify(song)
+      });
+    } catch (error) {
+      if (error.status && ![404, 405, 501].includes(error.status)) throw error;
+      const songs = loadAdminSongs().filter((candidate) => candidate.id !== song.id);
+      songs.push(song);
+      localStorage.setItem(adminSongStoreKey, JSON.stringify(songs));
+      forgetDeletedSong(song.id);
+      return { song };
+    }
+  },
+
+  async updateAdminSong(song) {
+    try {
+      return await apiRequest(`/api/admin/songs/${encodeURIComponent(song.id)}`, {
+        method: "PUT",
+        body: JSON.stringify(song)
+      });
+    } catch (error) {
+      if (error.status && ![404, 405, 501].includes(error.status)) throw error;
+      const songs = loadAdminSongs().filter((candidate) => candidate.id !== song.id);
+      songs.push(song);
+      localStorage.setItem(adminSongStoreKey, JSON.stringify(songs));
+      forgetDeletedSong(song.id);
+      return { song };
+    }
+  },
+
+  async deleteAdminSong(songId) {
+    try {
+      const result = await apiRequest(`/api/admin/songs/${encodeURIComponent(songId)}`, { method: "DELETE" });
+      rememberDeletedSong(songId);
+      return result;
+    } catch (error) {
+      if (error.status && ![404, 405, 501].includes(error.status)) throw error;
+      const songs = loadAdminSongs().filter((candidate) => candidate.id !== songId);
+      localStorage.setItem(adminSongStoreKey, JSON.stringify(songs));
+      rememberDeletedSong(songId);
+      return { ok: true, id: songId };
+    }
   }
 };

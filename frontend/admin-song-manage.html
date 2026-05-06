@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar músicas | Português com Música</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html#home" aria-label="Página inicial de Português com Música">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="index.html#songs">Músicas</a>
+        <a href="admin.html">Professor</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main class="admin-page">
+      <section class="progress-hero">
+        <p class="eyebrow">Catálogo</p>
+        <h1>Editar ou excluir músicas.</h1>
+        <p>Escolha uma atividade existente para editar ou remover do catálogo.</p>
+      </section>
+
+      <section id="adminLoginRequired" class="auth-required" hidden>
+        <h2>Entre como professor.</h2>
+        <p>Esta página é restrita a contas administrativas.</p>
+        <a class="play-link" href="login.html?next=admin-song-manage.html">Entrar ou criar conta</a>
+      </section>
+
+      <section id="adminForbidden" class="auth-required" hidden>
+        <h2>Acesso restrito.</h2>
+        <p>Sua conta não tem permissão de professor.</p>
+        <a class="play-link" href="index.html#songs">Voltar aos jogos</a>
+      </section>
+
+      <section id="adminContent" class="admin-workspace" hidden>
+        <div class="admin-panel admin-song-panel">
+          <div>
+            <p class="eyebrow">Músicas</p>
+            <h2>Gerenciar catálogo</h2>
+          </div>
+          <form id="songSearchForm" class="admin-form">
+            <label for="songTitleSearch">Buscar por título</label>
+            <input id="songTitleSearch" name="songTitleSearch" type="search" autocomplete="off" placeholder="Digite parte do título da música" />
+          </form>
+          <p id="songManagementFeedback" class="game-feedback" aria-live="polite"></p>
+          <div id="songManagementList" class="song-management-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

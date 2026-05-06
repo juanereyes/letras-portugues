@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Adicionar música | Português com Música</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html#home" aria-label="Página inicial de Português com Música">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="index.html#songs">Músicas</a>
+        <a href="admin.html">Professor</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main class="admin-page">
+      <section class="progress-hero">
+        <p class="eyebrow">Músicas</p>
+        <h1 id="songBuilderPageTitle">Adicionar nova música.</h1>
+        <p>Configure a atividade, confira a prévia e confirme o envio para o catálogo.</p>
+      </section>
+
+      <section id="adminLoginRequired" class="auth-required" hidden>
+        <h2>Entre como professor.</h2>
+        <p>Esta página é restrita a contas administrativas.</p>
+        <a class="play-link" href="login.html?next=admin-song-add.html">Entrar ou criar conta</a>
+      </section>
+
+      <section id="adminForbidden" class="auth-required" hidden>
+        <h2>Acesso restrito.</h2>
+        <p>Sua conta não tem permissão de professor.</p>
+        <a class="play-link" href="index.html#songs">Voltar aos jogos</a>
+      </section>
+
+      <section id="adminContent" class="admin-workspace" hidden>
+        <div class="admin-panel admin-song-panel">
+          <div>
+            <p class="eyebrow">Músicas</p>
+            <h2 id="songBuilderPanelTitle">Adicionar nova música</h2>
+          </div>
+          <form id="songBuilderForm" class="admin-form song-builder-form">
+            <label for="songGameMode">Modo de jogo</label>
+            <span class="select-combo-field">
+              <select id="songGameMode" name="gameMode" required>
+                <option value="">Selecione um modo</option>
+                <option value="lyric-order">Ordenar letras</option>
+                <option value="complete-lyrics">Completar letras</option>
+                <option value="word-select">Selecionar palavras</option>
+              </select>
+              <button class="select-combo-toggle" type="button" aria-label="Mostrar modos de jogo"></button>
+            </span>
+            <div id="songModeFields" class="song-mode-fields" aria-live="polite"></div>
+            <div class="game-actions">
+              <button id="previewSongButton" class="primary-action" type="button">Pré-visualizar música</button>
+            </div>
+            <p id="songBuilderFeedback" class="game-feedback" aria-live="polite"></p>
+          </form>
+          <section id="songPreviewPanel" class="song-preview-panel" hidden>
+            <div>
+              <p class="eyebrow">Prévia</p>
+              <h3>Confira antes de enviar</h3>
+            </div>
+            <div class="song-preview-grid">
+              <article class="game-card song-preview-card">
+                <span class="thumb-wrap">
+                  <img id="previewThumbnail" src="assets/thumb-default.svg" alt="Prévia da miniatura" />
+                </span>
+                <span class="card-body">
+                  <strong id="previewCardTitle"></strong>
+                  <span id="previewCardMeta"></span>
+                  <span id="previewCardTopic"></span>
+                </span>
+              </article>
+              <article class="song-game-preview">
+                <p id="previewGameCourse" class="eyebrow"></p>
+                <h3 id="previewGameTitle"></h3>
+                <p id="previewGameArtist" class="admin-muted"></p>
+                <section class="review-instructions">
+                  <h2 id="previewInstructionTitle"></h2>
+                  <p id="previewInstructionText"></p>
+                </section>
+                <div id="previewGameBody"></div>
+              </article>
+            </div>
+            <div class="game-actions">
+              <button id="confirmSongButton" class="primary-action" type="button">Confirmar envio</button>
+              <button id="editSongButton" class="secondary-action" type="button">Editar</button>
+            </div>
+            <p id="songPreviewFeedback" class="game-feedback" aria-live="polite"></p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

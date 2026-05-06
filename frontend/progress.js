@@ -128,15 +128,17 @@ function renderProgressRows() {
   getSortedGroups(groups).forEach(([course, courseGames]) => {
     const section = document.createElement("section");
     section.className = "progress-course-group";
-    section.innerHTML = `
-      <div class="group-header">
-        <h3>${course}</h3>
-        <p>${courseGames.length} ${courseGames.length === 1 ? "atividade" : "atividades"}</p>
-      </div>
-      <div class="progress-row-list"></div>
-    `;
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const title = document.createElement("h3");
+    title.textContent = course;
+    const count = document.createElement("p");
+    count.textContent = `${courseGames.length} ${courseGames.length === 1 ? "atividade" : "atividades"}`;
+    header.append(title, count);
+    const list = document.createElement("div");
+    list.className = "progress-row-list";
+    section.append(header, list);
 
-    const list = section.querySelector(".progress-row-list");
     getSortedGames(courseGames).forEach((game) => list.append(createProgressRow(game)));
     progressGroups.append(section);
   });
@@ -149,18 +151,30 @@ function createProgressRow(game) {
   const attemptLabel = `${attempts === 1 ? "Tentativa" : "Tentativas"}: ${attempts}`;
   const row = document.createElement("a");
   row.className = "progress-row";
-  row.href = game.gameUrl || "#";
-  row.innerHTML = `
-    <span class="progress-song">
-      <strong>${game.songTitle}</strong>
-      <small>${game.artist}</small>
-    </span>
-    <span>${game.topic}</span>
-    <span>${game.gameType}</span>
-    <span class="score-pill ${getScoreClass(score)}">${score === null ? "Sem tentativa" : `${score}%`}</span>
-    <span>${attemptLabel}</span>
-  `;
+  row.href = getSafeGameUrl(game.gameUrl);
+  const song = document.createElement("span");
+  song.className = "progress-song";
+  const title = document.createElement("strong");
+  title.textContent = game.songTitle;
+  const artist = document.createElement("small");
+  artist.textContent = game.artist;
+  song.append(title, artist);
+  const topic = document.createElement("span");
+  topic.textContent = game.topic;
+  const gameType = document.createElement("span");
+  gameType.textContent = game.gameType;
+  const scorePill = document.createElement("span");
+  scorePill.className = `score-pill ${getScoreClass(score)}`;
+  scorePill.textContent = score === null ? "Sem tentativa" : `${score}%`;
+  const attemptsText = document.createElement("span");
+  attemptsText.textContent = attemptLabel;
+  row.append(song, topic, gameType, scorePill, attemptsText);
   return row;
+}
+
+function getSafeGameUrl(url) {
+  const value = String(url || "");
+  return /^(lyric-order|complete-lyrics|word-select)\.html\?song=[A-Za-z0-9_-]+$/.test(value) ? value : "#";
 }
 
 function getScoreClass(score) {

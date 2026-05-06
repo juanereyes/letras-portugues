@@ -26,7 +26,13 @@ const songPreviewPanel = document.querySelector("#songPreviewPanel");
 const confirmSongButton = document.querySelector("#confirmSongButton");
 const editSongButton = document.querySelector("#editSongButton");
 const songPreviewFeedback = document.querySelector("#songPreviewFeedback");
+const songManagementList = document.querySelector("#songManagementList");
+const songManagementFeedback = document.querySelector("#songManagementFeedback");
+const songTitleSearch = document.querySelector("#songTitleSearch");
+const songBuilderPageTitle = document.querySelector("#songBuilderPageTitle");
+const songBuilderPanelTitle = document.querySelector("#songBuilderPanelTitle");
 const userStoreKey = "ptMusicUser";
+const pageParams = new URLSearchParams(window.location.search);
 
 const state = {
   user: loadUser(),
@@ -39,7 +45,8 @@ const state = {
   completeLyricsConfirmed: false,
   thumbnailPreviewUrl: "assets/thumb-default.svg",
   thumbnailLoading: false,
-  pendingSong: null
+  pendingSong: null,
+  editingSongId: pageParams.get("edit")
 };
 
 const modeMeta = {
@@ -66,10 +73,12 @@ function loadUser() {
 }
 
 function renderAuth() {
+  if (!loginLabel || !loginButton) return;
   renderAuthLabel(state.user, loginLabel, loginButton);
 }
 
 function setupAuth() {
+  if (!loginButton) return;
   loginButton.addEventListener("click", () => {
     handleAuthClick(state, () => {
       renderAuth();
@@ -96,45 +105,56 @@ async function hydrateSongs() {
 }
 
 function renderAccess() {
-  loginRequired.hidden = Boolean(state.user);
-  forbidden.hidden = !state.user || state.user.role === "admin";
-  adminContent.hidden = state.user?.role !== "admin";
+  if (loginRequired) loginRequired.hidden = Boolean(state.user);
+  if (forbidden) forbidden.hidden = !state.user || state.user.role === "admin";
+  if (adminContent) adminContent.hidden = state.user?.role !== "admin";
 }
 
 function setupForms() {
-  progressLookupForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await lookupProgress();
-  });
+  if (progressLookupForm) {
+    progressLookupForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await lookupProgress();
+    });
+  }
 
-  openPromoteModalButton.addEventListener("click", openPromoteModal);
-  closePromoteModalButton.addEventListener("click", closePromoteModal);
-  cancelPromoteButton.addEventListener("click", closePromoteModal);
-  promoteModal.addEventListener("click", (event) => {
-    if (event.target === promoteModal) closePromoteModal();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !promoteModal.hidden) closePromoteModal();
-  });
-  promoteUsername.addEventListener("input", updatePromoteConfirmation);
-  promoteConfirm.addEventListener("change", updatePromoteConfirmation);
+  if (openPromoteModalButton && promoteModal) {
+    openPromoteModalButton.addEventListener("click", openPromoteModal);
+    closePromoteModalButton.addEventListener("click", closePromoteModal);
+    cancelPromoteButton.addEventListener("click", closePromoteModal);
+    promoteModal.addEventListener("click", (event) => {
+      if (event.target === promoteModal) closePromoteModal();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !promoteModal.hidden) closePromoteModal();
+    });
+    promoteUsername.addEventListener("input", updatePromoteConfirmation);
+    promoteConfirm.addEventListener("change", updatePromoteConfirmation);
 
-  promoteForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await promoteAccount();
-  });
+    promoteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await promoteAccount();
+    });
+  }
 
-  songGameMode.addEventListener("change", renderSongModeFields);
-  songBuilderForm.addEventListener("input", resetSongPreview);
-  songBuilderForm.addEventListener("change", resetSongPreview);
-  previewSongButton.addEventListener("click", previewSongSubmission);
-  confirmSongButton.addEventListener("click", confirmSongSubmission);
-  editSongButton.addEventListener("click", () => {
-    songPreviewPanel.hidden = true;
-    songPreviewFeedback.textContent = "";
-  });
+  if (songGameMode && songBuilderForm) {
+    songGameMode.addEventListener("change", renderSongModeFields);
+    songBuilderForm.addEventListener("input", resetSongPreview);
+    songBuilderForm.addEventListener("change", resetSongPreview);
+    previewSongButton.addEventListener("click", previewSongSubmission);
+    confirmSongButton.addEventListener("click", confirmSongSubmission);
+    editSongButton.addEventListener("click", () => {
+      songPreviewPanel.hidden = true;
+      songPreviewFeedback.textContent = "";
+    });
+    setupSongBuilderMode();
+  }
+
+  if (songManagementList) {
+    songTitleSearch?.addEventListener("input", renderSongManagementList);
+    renderSongManagementList();
+  }
   setupSelectComboFields();
-  renderSongModeFields();
 }
 
 function openPromoteModal() {
@@ -195,18 +215,91 @@ function renderProgress(progress) {
     .forEach((row) => {
       const item = document.createElement("div");
       item.className = "progress-row admin-progress-row";
-      item.innerHTML = `
-        <span class="progress-song">
-          <strong>${row.songTitle}</strong>
-          <small>${row.artist}</small>
-        </span>
-        <span>${row.gameType}</span>
-        <span class="score-pill ${getScoreClass(row.lastScore)}">${row.lastScore === null ? "Sem nota" : `${row.lastScore}%`}</span>
-        <span>Tentativas: ${row.attemptCount}</span>
-      `;
+      const song = document.createElement("span");
+      song.className = "progress-song";
+      const title = document.createElement("strong");
+      title.textContent = row.songTitle;
+      const artist = document.createElement("small");
+      artist.textContent = row.artist;
+      song.append(title, artist);
+      const gameType = document.createElement("span");
+      gameType.textContent = row.gameType;
+      const score = document.createElement("span");
+      score.className = `score-pill ${getScoreClass(row.lastScore)}`;
+      score.textContent = row.lastScore === null ? "Sem nota" : `${row.lastScore}%`;
+      const attempts = document.createElement("span");
+      attempts.textContent = `Tentativas: ${row.attemptCount}`;
+      item.append(song, gameType, score, attempts);
       list.append(item);
     });
   progressResults.append(list);
+}
+
+function renderSongManagementList() {
+  if (!songManagementList) return;
+  songManagementList.innerHTML = "";
+
+  const query = normalize(songTitleSearch?.value || "");
+  const songs = state.songs.filter((song) => !query || normalize(song.songTitle).includes(query));
+
+  if (!songs.length) {
+    songManagementList.innerHTML = `<p class="empty-state">Nenhuma música cadastrada.</p>`;
+    return;
+  }
+
+  songs
+    .slice()
+    .sort((a, b) => a.songTitle.localeCompare(b.songTitle, "pt-BR"))
+    .forEach((song) => {
+      const item = document.createElement("article");
+      item.className = "song-management-row";
+      const image = document.createElement("img");
+      image.src = getSafeImageSrc(song.thumbnail);
+      image.alt = `Miniatura de ${song.songTitle}`;
+      const details = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = song.songTitle;
+      const meta = document.createElement("small");
+      meta.textContent = `${song.artist} / ${song.course} / ${song.gameType}`;
+      const topic = document.createElement("small");
+      topic.textContent = song.topic;
+      details.append(title, meta, topic);
+      const actions = document.createElement("span");
+      actions.className = "song-management-actions";
+      const editLink = document.createElement("a");
+      editLink.className = "secondary-action";
+      editLink.href = `admin-song-add.html?edit=${encodeURIComponent(song.id)}`;
+      editLink.textContent = "Editar";
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "danger-action";
+      deleteButton.type = "button";
+      deleteButton.dataset.deleteSong = song.id;
+      deleteButton.textContent = "Excluir";
+      actions.append(editLink, deleteButton);
+      item.append(image, details, actions);
+      songManagementList.append(item);
+    });
+
+  songManagementList.querySelectorAll("[data-delete-song]").forEach((button) => {
+    button.addEventListener("click", () => deleteSong(button.dataset.deleteSong));
+  });
+}
+
+async function deleteSong(songId) {
+  const song = state.songs.find((candidate) => candidate.id === songId);
+  if (!song) return;
+  const confirmed = window.confirm(`Excluir "${song.songTitle}" do catálogo? Esta ação não pode ser desfeita.`);
+  if (!confirmed) return;
+
+  songManagementFeedback.textContent = "Excluindo música...";
+  try {
+    await window.backend.deleteAdminSong(songId);
+    state.songs = state.songs.filter((candidate) => candidate.id !== songId);
+    renderSongManagementList();
+    songManagementFeedback.textContent = "Música excluída do catálogo.";
+  } catch (error) {
+    songManagementFeedback.textContent = error.message;
+  }
 }
 
 function renderSongModeFields() {
@@ -291,6 +384,93 @@ function renderSongModeFields() {
   if (mode === "word-select") setupWordSelectBuilder();
 }
 
+function setupSongBuilderMode() {
+  if (state.editingSongId) {
+    const song = state.songs.find((candidate) => candidate.id === state.editingSongId);
+    if (!song) {
+      songBuilderFeedback.textContent = "Música não encontrada para edição.";
+      return;
+    }
+    if (songBuilderPageTitle) songBuilderPageTitle.textContent = "Editar música.";
+    if (songBuilderPanelTitle) songBuilderPanelTitle.textContent = "Editar música";
+    confirmSongButton.textContent = "Confirmar edição";
+    populateSongBuilder(song);
+    return;
+  }
+  renderSongModeFields();
+}
+
+function populateSongBuilder(song) {
+  songGameMode.value = song.gameKind;
+  renderSongModeFields();
+
+  document.querySelector("#songTitle").value = song.songTitle || "";
+  document.querySelector("#songAuthor").value = song.artist || "";
+  document.querySelector("#songCourse").value = song.course || "";
+  document.querySelector("#songTopic").value = song.topic || "";
+  document.querySelector("#youtubeWatchLink").value = song.youtubeWatchUrl || "";
+  document.querySelector("#songInstructionTitle").value = song.instructionTitle || "";
+  document.querySelector("#songInstructionText").value = song.instructionText || "";
+  state.thumbnailPreviewUrl = song.thumbnail || "assets/thumb-default.svg";
+  document.querySelector("#songThumbnailPreview").src = getSafeImageSrc(state.thumbnailPreviewUrl);
+  document.querySelector("#songThumbnailFeedback").textContent =
+    song.thumbnail && song.thumbnail !== "assets/thumb-default.svg"
+      ? "Miniatura atual cadastrada."
+      : "Sem imagem enviada. A miniatura usará o fundo preto padrão.";
+
+  if (song.gameKind === "lyric-order") {
+    const countInput = document.querySelector("#lyricBlockCount");
+    const fields = document.querySelector("#lyricBlockFields");
+    const feedback = document.querySelector("#lyricBlockFeedback");
+    countInput.value = song.lyricChunks?.length || 1;
+    renderLyricOrderBlocks(countInput, fields, feedback);
+    [...fields.querySelectorAll("textarea")].forEach((textarea, index) => {
+      textarea.value = song.lyricChunks[index] || "";
+    });
+  }
+
+  if (song.gameKind === "complete-lyrics") {
+    state.completeLyricsTokens = parseBracketedLyricsToTokens(song.clozeLyrics || "");
+    state.completeLyricsConfirmed = state.completeLyricsTokens.some((token) => token.type === "word" && token.selected);
+    document.querySelector("#completeLyricsText").value = tokensToPlainLyrics(state.completeLyricsTokens);
+    document.querySelector("#submitCompleteLyricsBlanks").disabled = false;
+    document.querySelector("#completeLyricsFeedback").textContent = "Lacunas carregadas para edição.";
+    renderAdminCompleteLyrics();
+  }
+
+  if (song.gameKind === "word-select") {
+    state.wordSelectTokens = parseBracketedLyricsToTokens(song.selectableLyrics || "");
+    state.wordSelectConfirmed = state.wordSelectTokens.some((token) => token.type === "word" && token.selected);
+    document.querySelector("#wordSelectLyrics").value = tokensToPlainLyrics(state.wordSelectTokens);
+    document.querySelector("#submitWordSelectionTargets").disabled = false;
+    document.querySelector("#wordSelectFeedback").textContent = "Seleção carregada para edição.";
+    renderAdminSelectableLyrics();
+  }
+}
+
+function parseBracketedLyricsToTokens(text) {
+  const tokens = [];
+  const pattern = /\[([^\]]+)\]/g;
+  let cursor = 0;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > cursor) tokens.push({ type: "text", value: text.slice(cursor, match.index) });
+    tokens.push({
+      type: "word",
+      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      value: match[1],
+      selected: true
+    });
+    cursor = pattern.lastIndex;
+  }
+  if (cursor < text.length) tokens.push({ type: "text", value: text.slice(cursor) });
+  return tokens;
+}
+
+function tokensToPlainLyrics(tokens) {
+  return tokens.map((token) => token.value).join("");
+}
+
 function setupCompleteLyricsBuilder() {
   const lyricsInput = document.querySelector("#completeLyricsText");
   const stageButton = document.querySelector("#stageCompleteLyrics");
@@ -353,10 +533,16 @@ function renderAdminCompleteLyrics() {
     if (token.selected) {
       const wrapper = document.createElement("span");
       wrapper.className = "cloze-blank admin-cloze-blank";
-      wrapper.innerHTML = `
-        <input type="text" placeholder="${token.value}" disabled aria-label="Lacuna para ${token.value}" />
-        <span class="blank-result" aria-label="Remover lacuna">x</span>
-      `;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = token.value;
+      input.disabled = true;
+      input.setAttribute("aria-label", `Lacuna para ${token.value}`);
+      const result = document.createElement("span");
+      result.className = "blank-result";
+      result.setAttribute("aria-label", "Remover lacuna");
+      result.textContent = "x";
+      wrapper.append(input, result);
       wrapper.addEventListener("click", () => toggleAdminCompleteBlank(token.id));
       preview.append(wrapper);
       return;
@@ -661,12 +847,16 @@ async function confirmSongSubmission() {
   }
 
   confirmSongButton.disabled = true;
-  songPreviewFeedback.textContent = "Registrando música...";
+  songPreviewFeedback.textContent = state.editingSongId ? "Atualizando música..." : "Registrando música...";
   try {
-    const { song } = await window.backend.saveAdminSong(state.pendingSong);
+    const { song } = state.editingSongId
+      ? await window.backend.updateAdminSong(state.pendingSong)
+      : await window.backend.saveAdminSong(state.pendingSong);
     state.songs = [...state.songs.filter((candidate) => candidate.id !== song.id), song];
     state.topicOptions = getTopicOptions();
-    songPreviewFeedback.textContent = "Música registrada com todos os campos necessários.";
+    songPreviewFeedback.textContent = state.editingSongId
+      ? "Música atualizada com todos os campos necessários."
+      : "Música registrada com todos os campos necessários.";
   } catch (error) {
     confirmSongButton.disabled = false;
     songPreviewFeedback.textContent = error.message;
@@ -696,8 +886,9 @@ function buildSongFromForm() {
   }
 
   const title = document.querySelector("#songTitle").value.trim();
+  const songId = state.editingSongId || createSongId(title, gameKind);
   const song = {
-    id: createSongId(title, gameKind),
+    id: songId,
     songTitle: title,
     artist: document.querySelector("#songAuthor").value.trim(),
     course: document.querySelector("#songCourse").value,
@@ -706,7 +897,7 @@ function buildSongFromForm() {
     gameKind,
     highlighted: true,
     thumbnail: getThumbnailPath(),
-    gameUrl: `${gameKind}.html?song=${createSongId(title, gameKind)}`,
+    gameUrl: `${gameKind}.html?song=${songId}`,
     youtubeWatchUrl: youtubeInput.value.trim(),
     description: meta.description,
     instructionTitle: document.querySelector("#songInstructionTitle").value.trim(),
@@ -799,7 +990,7 @@ function tokensToSeedLyrics(tokens) {
 function getThumbnailPath() {
   const input = document.querySelector("#songThumbnail");
   const [file] = input?.files || [];
-  if (!file) return "assets/thumb-default.svg";
+  if (!file) return state.thumbnailPreviewUrl || "assets/thumb-default.svg";
   return state.thumbnailPreviewUrl;
 }
 
@@ -827,7 +1018,7 @@ function slugify(value) {
 
 function renderSongPreview(song) {
   confirmSongButton.disabled = false;
-  document.querySelector("#previewThumbnail").src = state.thumbnailPreviewUrl;
+  document.querySelector("#previewThumbnail").src = getSafeImageSrc(state.thumbnailPreviewUrl);
   document.querySelector("#previewCardTitle").textContent = song.songTitle;
   document.querySelector("#previewCardMeta").textContent = `${song.course} / ${song.gameType}`;
   document.querySelector("#previewCardTopic").textContent = `${song.artist} - ${song.topic}`;
@@ -1042,6 +1233,20 @@ function getScoreClass(score) {
   return "score-low";
 }
 
+function normalize(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getSafeImageSrc(src) {
+  const value = String(src || "");
+  if (/^assets\/[A-Za-z0-9_./-]+\.(svg|png|jpe?g|gif|webp)$/.test(value) && !value.includes("..")) return value;
+  if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value;
+  return "assets/thumb-default.svg";
+}
+
 async function promoteAccount() {
   const username = promoteUsername.value.trim().toLowerCase();
   if (!username || !promoteConfirm.checked) return;
@@ -1058,9 +1263,9 @@ async function promoteAccount() {
 
 async function initAdminPage() {
   setupAuth();
-  setupForms();
   renderAuth();
   await hydrateSongs();
+  setupForms();
   await hydrateUser();
   renderAccess();
 }
