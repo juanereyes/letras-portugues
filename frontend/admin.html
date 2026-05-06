@@ -3,21 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Professor | Portugues com Musica</title>
+    <title>Professor | Português com Música</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="index.html#home" aria-label="Pagina inicial de Portugues com Musica">
+      <a class="brand" href="index.html#home" aria-label="Página inicial de Português com Música">
         <span class="brand-mark">PT</span>
         <span>
-          <strong>Portugues com Musica</strong>
-          <small>Pratica de lingua no MIT</small>
+          <strong>Português com Música</strong>
+          <small>Prática de língua no MIT</small>
         </span>
       </a>
 
-      <nav class="topnav" aria-label="Navegacao principal">
-        <a href="index.html#songs">Musicas</a>
+      <nav class="topnav" aria-label="Navegação principal">
+        <a href="index.html#songs">Músicas</a>
         <a href="progress.html">Progresso</a>
       </nav>
 
@@ -30,19 +30,19 @@
     <main class="admin-page">
       <section class="progress-hero">
         <p class="eyebrow">Professor</p>
-        <h1>Area restrita para administradores.</h1>
-        <p>Consulte progresso por usuario, promova contas e prepare novos jogos musicais.</p>
+        <h1>Área restrita para administradores.</h1>
+        <p>Consulte progresso por usuário, promova contas e prepare novos jogos musicais.</p>
       </section>
 
       <section id="adminLoginRequired" class="auth-required" hidden>
         <h2>Entre como professor.</h2>
-        <p>Esta pagina e restrita a contas administrativas.</p>
+        <p>Esta página é restrita a contas administrativas.</p>
         <a id="adminLoginLink" class="play-link" href="login.html?next=admin.html">Entrar ou criar conta</a>
       </section>
 
       <section id="adminForbidden" class="auth-required" hidden>
         <h2>Acesso restrito.</h2>
-        <p>Sua conta nao tem permissao de professor.</p>
+        <p>Sua conta não tem permissão de professor.</p>
         <a class="play-link" href="index.html#songs">Voltar aos jogos</a>
       </section>
 
@@ -50,10 +50,10 @@
         <div class="admin-panel">
           <div>
             <p class="eyebrow">Progresso de estudante</p>
-            <h2>Buscar por usuario</h2>
+            <h2>Buscar por usuário</h2>
           </div>
           <form id="progressLookupForm" class="admin-form">
-            <label for="progressUsername">Usuario</label>
+            <label for="progressUsername">Usuário</label>
             <div class="inline-form-row">
               <input id="progressUsername" name="username" type="text" autocomplete="off" required />
               <button class="primary-action" type="submit">Buscar</button>
@@ -65,27 +65,30 @@
 
         <div class="admin-panel">
           <div>
-            <p class="eyebrow">Permissoes</p>
+            <p class="eyebrow">Permissões</p>
             <h2>Administradores</h2>
           </div>
-          <p class="admin-muted">Promova outra conta somente quando ela tambem precisar administrar atividades.</p>
-          <button id="openPromoteModal" class="secondary-action" type="button">Promover usuario</button>
+          <p class="admin-muted">Promova outra conta somente quando ela também precisar administrar atividades.</p>
+          <button id="openPromoteModal" class="secondary-action" type="button">Promover usuário</button>
           <p id="promoteFeedback" class="game-feedback" aria-live="polite"></p>
         </div>
 
         <div class="admin-panel admin-song-panel">
           <div>
-            <p class="eyebrow">Musicas</p>
-            <h2>Adicionar nova musica</h2>
+            <p class="eyebrow">Músicas</p>
+            <h2>Adicionar nova música</h2>
           </div>
           <form id="songBuilderForm" class="admin-form song-builder-form">
             <label for="songGameMode">Modo de jogo</label>
-            <select id="songGameMode" name="gameMode" required>
-              <option value="">Selecione um modo</option>
-              <option value="lyric-order">Ordenar letras</option>
-              <option value="complete-lyrics">Completar letras</option>
-              <option value="word-select">Selecionar palavras</option>
-            </select>
+            <span class="select-combo-field">
+              <select id="songGameMode" name="gameMode" required>
+                <option value="">Selecione um modo</option>
+                <option value="lyric-order">Ordenar letras</option>
+                <option value="complete-lyrics">Completar letras</option>
+                <option value="word-select">Selecionar palavras</option>
+              </select>
+              <button class="select-combo-toggle" type="button" aria-label="Mostrar modos de jogo"></button>
+            </span>
             <div id="songModeFields" class="song-mode-fields" aria-live="polite"></div>
           </form>
         </div>
@@ -96,22 +99,22 @@
       <section class="modal-body admin-modal" role="dialog" aria-modal="true" aria-labelledby="promoteTitle">
         <button id="closePromoteModal" class="icon-button" type="button" aria-label="Fechar">x</button>
         <div>
-          <p class="eyebrow">Permissoes</p>
-          <h2 id="promoteTitle">Promover usuario</h2>
-          <p class="admin-muted">Esta acao concede acesso de professor a outra conta.</p>
+          <p class="eyebrow">Permissões</p>
+          <h2 id="promoteTitle">Promover usuário</h2>
+          <p class="admin-muted">Esta ação concede acesso de professor a outra conta.</p>
         </div>
         <form id="promoteForm" class="admin-form">
-          <label for="promoteUsername">Usuario</label>
+          <label for="promoteUsername">Usuário</label>
           <input id="promoteUsername" name="username" type="text" autocomplete="off" required />
 
           <label class="confirm-row" for="promoteConfirm">
             <input id="promoteConfirm" type="checkbox" />
-            <span>Confirmo que este usuario deve ter permissoes de professor.</span>
+            <span>Confirmo que este usuário deve ter permissões de professor.</span>
           </label>
 
           <div class="modal-actions">
             <button id="cancelPromote" class="secondary-action" type="button">Cancelar</button>
-            <button id="confirmPromote" class="primary-action" type="submit" disabled>Confirmar promocao</button>
+            <button id="confirmPromote" class="primary-action" type="submit" disabled>Confirmar promoção</button>
           </div>
           <p id="promoteModalFeedback" class="game-feedback" aria-live="polite"></p>
         </form>

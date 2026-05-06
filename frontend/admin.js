@@ -93,6 +93,7 @@ function setupForms() {
   });
 
   songGameMode.addEventListener("change", renderSongModeFields);
+  setupSelectComboFields();
   renderSongModeFields();
 }
 
@@ -143,7 +144,7 @@ function renderProgress(progress) {
   });
 
   if (!rows.length) {
-    progressResults.innerHTML = `<p class="empty-state">Nenhuma tentativa registrada para este usuario.</p>`;
+    progressResults.innerHTML = `<p class="empty-state">Nenhuma tentativa registrada para este usuário.</p>`;
     return;
   }
 
@@ -171,7 +172,7 @@ function renderProgress(progress) {
 function renderSongModeFields() {
   const mode = songGameMode.value;
   if (!mode) {
-    songModeFields.innerHTML = `<p class="empty-state">Selecione um modo de jogo para configurar os campos da musica.</p>`;
+    songModeFields.innerHTML = `<p class="empty-state">Selecione um modo de jogo para configurar os campos da música.</p>`;
     return;
   }
 
@@ -180,8 +181,8 @@ function renderSongModeFields() {
       <section class="song-mode-card">
         <div>
           <p class="eyebrow">Ordenar letras</p>
-          <h3>Campos para blocos reordenaveis</h3>
-          <p class="admin-muted">Placeholder para titulo, artista, link do YouTube e blocos de letras em ordem correta.</p>
+          <h3>Campos para blocos reordenáveis</h3>
+          <p class="admin-muted">Placeholder para título, artista, link do YouTube e blocos de letras em ordem correta.</p>
         </div>
         <label for="orderPlaceholder">Blocos da letra</label>
         <textarea id="orderPlaceholder" rows="7" placeholder="Exemplo:\nBom dia, boa tarde\nBoa noite amor\nMinha vida inteira..." disabled></textarea>
@@ -193,7 +194,7 @@ function renderSongModeFields() {
         <div>
           <p class="eyebrow">Completar letras</p>
           <h3>Campos para lacunas</h3>
-          <p class="admin-muted">Placeholder para letras com espacos em branco e respostas esperadas por lacuna.</p>
+          <p class="admin-muted">Placeholder para letras com espaços em branco e respostas esperadas por lacuna.</p>
         </div>
         <label for="clozePlaceholder">Letra com lacunas</label>
         <textarea id="clozePlaceholder" rows="7" placeholder="Exemplo:\nEu moro em ____\nResposta esperada: Lisboa" disabled></textarea>
@@ -204,8 +205,8 @@ function renderSongModeFields() {
       <section class="song-mode-card">
         <div>
           <p class="eyebrow">Selecionar palavras</p>
-          <h3>Campos para selecao lexical</h3>
-          <p class="admin-muted">Placeholder para texto completo, categoria gramatical e palavras corretas para selecao.</p>
+          <h3>Campos para seleção lexical</h3>
+          <p class="admin-muted">Placeholder para texto completo, categoria gramatical e palavras corretas para seleção.</p>
         </div>
         <label for="selectPlaceholder">Palavras-alvo</label>
         <textarea id="selectPlaceholder" rows="7" placeholder="Exemplo:\nCategoria: verbos no passado\nPalavras corretas: fui, cantou, chegou" disabled></textarea>
@@ -216,10 +217,31 @@ function renderSongModeFields() {
 
   songModeFields.innerHTML = `
     ${renderCommonSongFields()}
+    ${renderSongInstructionFields()}
     ${templates[mode]}
   `;
   setupYoutubeWatchLinkValidation();
   setupTopicCombobox();
+  setupSelectComboFields(songModeFields);
+}
+
+function setupSelectComboFields(root = document) {
+  root.querySelectorAll(".select-combo-field").forEach((field) => {
+    if (field.dataset.selectComboReady) return;
+    field.dataset.selectComboReady = "true";
+    const select = field.querySelector("select");
+    const toggle = field.querySelector(".select-combo-toggle");
+    if (!select || !toggle) return;
+
+    toggle.addEventListener("click", () => {
+      select.focus();
+      if (typeof select.showPicker === "function") {
+        select.showPicker();
+        return;
+      }
+      select.click();
+    });
+  });
 }
 
 function renderCommonSongFields() {
@@ -227,7 +249,7 @@ function renderCommonSongFields() {
     <section class="song-common-fields">
       <div class="field-grid">
         <label>
-          <span>Titulo</span>
+          <span>Título</span>
           <input id="songTitle" name="songTitle" type="text" placeholder="Exemplo: Bom dia, boa tarde, boa noite amor" required />
         </label>
         <label>
@@ -236,28 +258,51 @@ function renderCommonSongFields() {
         </label>
         <label>
           <span>Curso</span>
-          <select id="songCourse" name="course" required>
-            <option value="">Selecione um curso</option>
-            <option>Portugues I</option>
-            <option>Portugues II</option>
-            <option>Portugues III</option>
-            <option>Portugues IV</option>
-          </select>
+          <span class="select-combo-field">
+            <select id="songCourse" name="course" required>
+              <option value="">Selecione um curso</option>
+              <option>Português I</option>
+              <option>Português II</option>
+              <option>Português III</option>
+              <option>Português IV</option>
+            </select>
+            <button class="select-combo-toggle" type="button" aria-label="Mostrar cursos"></button>
+          </span>
         </label>
         <label>
-          <span>Topico</span>
+          <span>Tópico</span>
           <span class="combo-field">
-            <input id="songTopic" name="topic" type="text" placeholder="Exemplo: vocabulario - partes do corpo, Pretérito perfeito" role="combobox" aria-expanded="false" aria-controls="songTopicOptions" autocomplete="off" required />
-            <button id="songTopicToggle" class="combo-toggle" type="button" aria-label="Mostrar topicos">⌄</button>
+            <input id="songTopic" name="topic" type="text" placeholder="Exemplo: vocabulário - partes do corpo, pretérito perfeito" role="combobox" aria-expanded="false" aria-controls="songTopicOptions" autocomplete="off" required />
+            <button id="songTopicToggle" class="combo-toggle" type="button" aria-label="Mostrar tópicos"></button>
             <div id="songTopicOptions" class="combo-options" role="listbox" hidden></div>
           </span>
         </label>
       </div>
       <label>
         <span>Link do YouTube</span>
-        <input id="youtubeWatchLink" name="youtubeWatchLink" type="url" placeholder="https://www.youtube.com/watch?v=<codigo>" required />
+        <input id="youtubeWatchLink" name="youtubeWatchLink" type="url" placeholder="https://www.youtube.com/watch?v=<código>" required />
       </label>
       <p id="youtubeWatchFeedback" class="field-feedback" aria-live="polite"></p>
+    </section>
+  `;
+}
+
+function renderSongInstructionFields() {
+  return `
+    <section class="song-instruction-fields">
+      <div>
+        <p class="eyebrow">Instruções</p>
+        <h3>Orientação para esta atividade</h3>
+        <p class="admin-muted">Texto mostrado ao estudante antes de iniciar o jogo.</p>
+      </div>
+      <label>
+        <span>Título das instruções</span>
+        <input id="songInstructionTitle" name="instructionTitle" type="text" placeholder="Exemplo: Antes de começar" required />
+      </label>
+      <label>
+        <span>Texto das instruções</span>
+        <textarea id="songInstructionText" name="instructionText" rows="5" placeholder="Exemplo: Escute a música uma vez e depois complete a atividade." required></textarea>
+      </label>
     </section>
   `;
 }
@@ -341,13 +386,13 @@ function normalizeYoutubeWatchLink(input, feedback) {
 
   const isWatchLink = /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+$/.test(croppedValue);
   if (!isWatchLink) {
-    input.setCustomValidity("Use um link no formato https://www.youtube.com/watch?v=<codigo>.");
-    feedback.textContent = "Use um link no formato https://www.youtube.com/watch?v=<codigo>.";
+    input.setCustomValidity("Use um link no formato https://www.youtube.com/watch?v=<código>.");
+    feedback.textContent = "Use um link no formato https://www.youtube.com/watch?v=<código>.";
     return;
   }
 
   input.setCustomValidity("");
-  feedback.textContent = rawValue === croppedValue ? "Link valido." : "Link valido. Parametros extras foram removidos.";
+  feedback.textContent = rawValue === croppedValue ? "Link válido." : "Link válido. Parâmetros extras foram removidos.";
 }
 
 function getScoreClass(score) {
@@ -364,7 +409,7 @@ async function promoteAccount() {
   promoteModalFeedback.textContent = "Promovendo conta...";
   try {
     const { user } = await window.backend.promoteUser(username);
-    promoteFeedback.textContent = `${user.username} agora tem permissao de professor.`;
+    promoteFeedback.textContent = `${user.username} agora tem permissão de professor.`;
     closePromoteModal();
   } catch (error) {
     promoteModalFeedback.textContent = error.message;
