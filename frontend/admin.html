@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Professor | Portugues com Musica</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html#home" aria-label="Pagina inicial de Portugues com Musica">
+        <span class="brand-mark">PT</span>
+        <span>
+          <strong>Portugues com Musica</strong>
+          <small>Pratica de lingua no MIT</small>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegacao principal">
+        <a href="index.html#songs">Musicas</a>
+        <a href="progress.html">Progresso</a>
+      </nav>
+
+      <button class="login-button" id="loginButton" type="button">
+        <span class="login-icon" aria-hidden="true"></span>
+        <span id="loginLabel">Entrar</span>
+      </button>
+    </header>
+
+    <main class="admin-page">
+      <section class="progress-hero">
+        <p class="eyebrow">Professor</p>
+        <h1>Area restrita para administradores.</h1>
+        <p>Consulte progresso por usuario, promova contas e prepare novos jogos musicais.</p>
+      </section>
+
+      <section id="adminLoginRequired" class="auth-required" hidden>
+        <h2>Entre como professor.</h2>
+        <p>Esta pagina e restrita a contas administrativas.</p>
+        <a id="adminLoginLink" class="play-link" href="login.html?next=admin.html">Entrar ou criar conta</a>
+      </section>
+
+      <section id="adminForbidden" class="auth-required" hidden>
+        <h2>Acesso restrito.</h2>
+        <p>Sua conta nao tem permissao de professor.</p>
+        <a class="play-link" href="index.html#songs">Voltar aos jogos</a>
+      </section>
+
+      <section id="adminContent" class="admin-workspace" hidden>
+        <div class="admin-panel">
+          <div>
+            <p class="eyebrow">Progresso de estudante</p>
+            <h2>Buscar por usuario</h2>
+          </div>
+          <form id="progressLookupForm" class="admin-form">
+            <label for="progressUsername">Usuario</label>
+            <div class="inline-form-row">
+              <input id="progressUsername" name="username" type="text" autocomplete="off" required />
+              <button class="primary-action" type="submit">Buscar</button>
+            </div>
+            <p id="progressLookupFeedback" class="game-feedback" aria-live="polite"></p>
+          </form>
+          <div id="adminProgressResults" class="admin-results"></div>
+        </div>
+
+        <div class="admin-panel">
+          <div>
+            <p class="eyebrow">Permissoes</p>
+            <h2>Administradores</h2>
+          </div>
+          <p class="admin-muted">Promova outra conta somente quando ela tambem precisar administrar atividades.</p>
+          <button id="openPromoteModal" class="secondary-action" type="button">Promover usuario</button>
+          <p id="promoteFeedback" class="game-feedback" aria-live="polite"></p>
+        </div>
+
+        <div class="admin-panel admin-song-panel">
+          <div>
+            <p class="eyebrow">Musicas</p>
+            <h2>Adicionar nova musica</h2>
+          </div>
+          <form class="admin-form placeholder-form" aria-disabled="true">
+            <label for="songTitle">Titulo</label>
+            <input id="songTitle" type="text" placeholder="Placeholder" disabled />
+
+            <label for="songArtist">Artista</label>
+            <input id="songArtist" type="text" placeholder="Placeholder" disabled />
+
+            <label for="songGameMode">Modo de jogo</label>
+            <select id="songGameMode" disabled>
+              <option>Ordenar letras</option>
+              <option>Completar letras</option>
+              <option>Selecionar palavras</option>
+            </select>
+
+            <label for="songLyrics">Conteudo do jogo</label>
+            <textarea id="songLyrics" rows="7" placeholder="Placeholder para o editor especifico do modo de jogo" disabled></textarea>
+
+            <button class="primary-action" type="button" disabled>Salvar musica</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div id="promoteModal" class="modal" hidden>
+      <section class="modal-body admin-modal" role="dialog" aria-modal="true" aria-labelledby="promoteTitle">
+        <button id="closePromoteModal" class="icon-button" type="button" aria-label="Fechar">x</button>
+        <div>
+          <p class="eyebrow">Permissoes</p>
+          <h2 id="promoteTitle">Promover usuario</h2>
+          <p class="admin-muted">Esta acao concede acesso de professor a outra conta.</p>
+        </div>
+        <form id="promoteForm" class="admin-form">
+          <label for="promoteUsername">Usuario</label>
+          <input id="promoteUsername" name="username" type="text" autocomplete="off" required />
+
+          <label class="confirm-row" for="promoteConfirm">
+            <input id="promoteConfirm" type="checkbox" />
+            <span>Confirmo que este usuario deve ter permissoes de professor.</span>
+          </label>
+
+          <div class="modal-actions">
+            <button id="cancelPromote" class="secondary-action" type="button">Cancelar</button>
+            <button id="confirmPromote" class="primary-action" type="submit" disabled>Confirmar promocao</button>
+          </div>
+          <p id="promoteModalFeedback" class="game-feedback" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+
+    <script src="backend.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

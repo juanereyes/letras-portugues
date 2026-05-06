@@ -10,8 +10,10 @@ The current app is intentionally lightweight: plain HTML/CSS/JavaScript on the f
 - Random carousel showing four highlighted songs on each page load.
 - Separate game pages for each reusable game mode.
 - Student login and registration with HTTP-only session cookies.
+- Student/admin role separation. The UI labels admin access as Professor.
 - Per-student progress tracking in SQLite.
 - Dedicated progress page showing last score and total attempts per song.
+- Professor page for admin-only progress lookup, account promotion, and placeholder song entry.
 - Docker and non-Docker local development options.
 
 ## Game Modes
@@ -176,8 +178,19 @@ The gateway exposes:
 - `/api/auth/login`
 - `/api/auth/logout`
 - `/api/me`
+- `/api/admin/progress`
+- `/api/admin/promote`
 
 The gateway delegates auth work to the private auth service. Passwords are stored as salted PBKDF2 hashes, and sessions use HTTP-only cookies.
+
+Accounts have one of two roles:
+
+- `student`: can play games and save personal progress.
+- `admin`: has student capabilities plus access to the Professor page.
+
+The first registered account becomes `admin`; later registrations become `student`. After that, the only application-supported way to create another admin is for an existing admin to promote a username from the Professor page.
+
+This is intentionally pragmatic, but it is not ideal from a separation-of-duties perspective because admins can grant admin access to other accounts. For the current intended use, the class professor is expected to be the only admin and there is no separate person available to fulfill an independent account-administration role. If the app later grows beyond that single-professor model, admin promotion should move to a separate operational process or a distinct higher-trust role.
 
 Future authentication work should add password recovery for forgotten passwords, including verified email addresses, confirmation emails, expiring reset tokens, and the email/MFA setup needed to confirm account ownership before password changes.
 
@@ -211,6 +224,8 @@ Scores are color-coded:
 - yellow: `60-89%`
 - red: `< 60%`
 - grey: no attempts
+
+Admins can use the Professor page to look up a specific user's progress by username. This lookup is username-based for now; it should move to email or Kerberos identity when institutional authentication is added.
 
 ## Next Steps
 

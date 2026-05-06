@@ -5,7 +5,27 @@ function renderAuthLabel(user, label, button) {
   button.classList.toggle("signed-in", Boolean(user));
   button.setAttribute("aria-expanded", "false");
   button.setAttribute("aria-haspopup", user ? "menu" : "false");
+  renderAdminNav(user);
   if (!user) closeAuthMenu();
+}
+
+function renderAdminNav(user) {
+  const nav = document.querySelector(".topnav");
+  if (!nav) return;
+
+  let adminLink = nav.querySelector("[data-admin-link]");
+  if (user?.role !== "admin") {
+    adminLink?.remove();
+    return;
+  }
+
+  if (!adminLink) {
+    adminLink = document.createElement("a");
+    adminLink.dataset.adminLink = "true";
+    adminLink.href = "admin.html";
+    adminLink.textContent = "Professor";
+    nav.append(adminLink);
+  }
 }
 
 function getReturnUrl() {
@@ -66,6 +86,7 @@ async function logoutUser(state, renderAuth) {
   state.progress = { completed: {}, attempts: [], streak: 0 };
   closeAuthMenu();
   renderAuth();
+  window.location.href = "index.html#songs";
 }
 
 function closeAuthMenu() {

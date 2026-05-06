@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 import hashlib
 import json
 import os
@@ -32,6 +33,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               username TEXT NOT NULL UNIQUE,
+              role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
               password_hash TEXT NOT NULL,
               password_salt TEXT NOT NULL,
               created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -46,6 +48,13 @@ def init_db():
             );
             """
         )
+        ensure_user_columns(db)
+
+
+def ensure_user_columns(db):
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
+    if "role" not in columns:
+        db.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'")
 
 
 def hash_password(password, salt=None):
@@ -60,7 +69,7 @@ def verify_password(password, salt, expected_hash):
 
 
 def user_payload(row):
-    return {"id": row["id"], "username": row["username"]}
+    return {"id": row["id"], "username": row["username"], "role": row["role"]}
 
 
 class AuthHandler(BaseHTTPRequestHandler):
@@ -69,8 +78,12 @@ class AuthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.is_internal():
             return
-        if self.path == "/internal/auth/me":
+        route = urlparse(self.path)
+        if route.path == "/internal/auth/me":
             self.handle_me()
+            return
+        if route.path == "/internal/auth/users/by-username":
+            self.handle_user_by_username(route)
             return
         self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
 
@@ -85,6 +98,9 @@ class AuthHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/internal/auth/logout":
             self.handle_logout()
+            return
+        if self.path == "/internal/auth/promote":
+            self.handle_promote()
             return
         self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
 
@@ -131,7 +147,7 @@ class AuthHandler(BaseHTTPRequestHandler):
             db.execute("DELETE FROM sessions WHERE expires_at <= ?", (int(time.time()),))
             return db.execute(
                 """
-                SELECT users.id, users.username
+                SELECT users.id, users.username, users.role
                 FROM sessions
                 JOIN users ON users.id = sessions.user_id
                 WHERE sessions.token = ? AND sessions.expires_at > ?
@@ -173,11 +189,13 @@ class AuthHandler(BaseHTTPRequestHandler):
             if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
                 self.send_json({"error": "Esse nome de usuário já existe."}, HTTPStatus.CONFLICT)
                 return
+            user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
+            role = "admin" if user_count == 0 else "student"
             db.execute(
-                "INSERT INTO users (username, password_hash, password_salt) VALUES (?, ?, ?)",
-                (username, password_hash, salt),
+                "INSERT INTO users (username, role, password_hash, password_salt) VALUES (?, ?, ?, ?)",
+                (username, role, password_hash, salt),
             )
-            user = db.execute("SELECT id, username FROM users WHERE username = ?", (username,)).fetchone()
+            user = db.execute("SELECT id, username, role FROM users WHERE username = ?", (username,)).fetchone()
             self.start_session(db, user)
 
     def handle_login(self):
@@ -188,7 +206,7 @@ class AuthHandler(BaseHTTPRequestHandler):
         password = str(payload.get("password", ""))
         with connect_db() as db:
             user = db.execute(
-                "SELECT id, username, password_hash, password_salt FROM users WHERE username = ?",
+                "SELECT id, username, role, password_hash, password_salt FROM users WHERE username = ?",
                 (username,),
             ).fetchone()
             if not user or not verify_password(password, user["password_salt"], user["password_hash"]):
@@ -204,6 +222,35 @@ class AuthHandler(BaseHTTPRequestHandler):
                 db.execute("DELETE FROM sessions WHERE token = ?", (token,))
         cookie = f"{SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
         self.send_json({"ok": True}, extra_headers={"Set-Cookie": cookie})
+
+    def handle_user_by_username(self, route):
+        username = str(parse_qs(route.query).get("username", [""])[0]).strip().lower()
+        if not username:
+            self.send_json({"error": "Informe um nome de usuario."}, HTTPStatus.BAD_REQUEST)
+            return
+        with connect_db() as db:
+            user = db.execute("SELECT id, username, role FROM users WHERE username = ?", (username,)).fetchone()
+        if not user:
+            self.send_json({"error": "Usuario nao encontrado."}, HTTPStatus.NOT_FOUND)
+            return
+        self.send_json({"user": user_payload(user)})
+
+    def handle_promote(self):
+        payload = self.read_json()
+        if payload is None:
+            return
+        username = str(payload.get("username", "")).strip().lower()
+        if not username:
+            self.send_json({"error": "Informe um nome de usuario."}, HTTPStatus.BAD_REQUEST)
+            return
+        with connect_db() as db:
+            user = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+            if not user:
+                self.send_json({"error": "Usuario nao encontrado."}, HTTPStatus.NOT_FOUND)
+                return
+            db.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user["id"],))
+            promoted = db.execute("SELECT id, username, role FROM users WHERE id = ?", (user["id"],)).fetchone()
+        self.send_json({"user": user_payload(promoted)})
 
 
 if __name__ == "__main__":

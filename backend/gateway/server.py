@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 import json
@@ -225,6 +225,22 @@ class GatewayHandler(SimpleHTTPRequestHandler):
             query = urlencode({"userId": user["id"]})
             self.delegate_progress("GET", f"/internal/progress?{query}")
             return
+        if route == "/api/admin/progress":
+            admin = self.require_admin()
+            if not admin:
+                return
+            username = str(parse_qs(urlparse(self.path).query).get("username", [""])[0]).strip().lower()
+            if not username:
+                self.send_json({"error": "Informe um nome de usuario."}, HTTPStatus.BAD_REQUEST)
+                return
+            target_user = self.find_user_by_username(username)
+            if not target_user:
+                return
+            query = urlencode({"userId": target_user["id"]})
+            status, progress, _ = self.service_request("GET", PROGRESS_BASE_URL, f"/internal/progress?{query}")
+            progress["user"] = target_user
+            self.send_json(progress, status)
+            return
         super().do_GET()
 
     def do_POST(self):
@@ -247,6 +263,15 @@ class GatewayHandler(SimpleHTTPRequestHandler):
                 return
             payload["userId"] = user["id"]
             self.delegate_progress("POST", "/internal/attempts", payload)
+            return
+        if route == "/api/admin/promote":
+            admin = self.require_admin()
+            if not admin:
+                return
+            payload = self.read_json_body()
+            if payload is None:
+                return
+            self.delegate_auth("POST", "/internal/auth/promote", payload)
             return
         self.send_json({"error": "Rota não encontrada."}, HTTPStatus.NOT_FOUND)
 
@@ -314,6 +339,23 @@ class GatewayHandler(SimpleHTTPRequestHandler):
         status, body, _ = self.service_request("GET", AUTH_BASE_URL, "/internal/auth/me")
         if status != HTTPStatus.OK or not body.get("user"):
             self.send_json({"error": "É preciso entrar para continuar."}, HTTPStatus.UNAUTHORIZED)
+            return None
+        return body["user"]
+
+    def require_admin(self):
+        user = self.require_user()
+        if not user:
+            return None
+        if user.get("role") != "admin":
+            self.send_json({"error": "Acesso restrito a professores."}, HTTPStatus.FORBIDDEN)
+            return None
+        return user
+
+    def find_user_by_username(self, username):
+        query = urlencode({"username": username})
+        status, body, _ = self.service_request("GET", AUTH_BASE_URL, f"/internal/auth/users/by-username?{query}")
+        if status != HTTPStatus.OK or not body.get("user"):
+            self.send_json(body, status)
             return None
         return body["user"]
 

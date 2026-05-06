@@ -57,5 +57,16 @@ window.backend = {
       method: "POST",
       body: JSON.stringify({ gameId, score, details })
     });
+  },
+
+  async getAdminProgress(username) {
+    return apiRequest(`/api/admin/progress?username=${encodeURIComponent(username)}`);
+  },
+
+  async promoteUser(username) {
+    return apiRequest("/api/admin/promote", {
+      method: "POST",
+      body: JSON.stringify({ username })
+    });
   }
 };
