@@ -676,6 +676,32 @@ h2 {
   padding: 0 18px;
 }
 
+.lyric-block-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.lyric-block-field {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-selectable-preview {
+  min-height: 180px;
+}
+
+.admin-cloze-preview {
+  min-height: 180px;
+}
+
+.admin-cloze-blank {
+  cursor: pointer;
+}
+
+.admin-cloze-blank input {
+  cursor: pointer;
+}
+
 .song-common-fields {
   display: grid;
   gap: 14px;
@@ -909,6 +935,21 @@ h2 {
   width: 18px;
   min-height: 18px;
   margin: 2px 0 0;
+}
+
+.complete-global-hints-row {
+  width: fit-content;
+  max-width: 100%;
+}
+
+#completeGlobalHintsField {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+#completeGlobalHints {
+  width: 100%;
 }
 
 .modal-actions {

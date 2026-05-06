@@ -25,7 +25,9 @@ const state = {
   user: loadUser(),
   songs: [],
   topicOptions: [],
-  topicComboOpen: false
+  topicComboOpen: false,
+  wordSelectTokens: [],
+  completeLyricsTokens: []
 };
 
 function loadUser() {
@@ -181,11 +183,13 @@ function renderSongModeFields() {
       <section class="song-mode-card">
         <div>
           <p class="eyebrow">Ordenar letras</p>
-          <h3>Campos para blocos reordenáveis</h3>
-          <p class="admin-muted">Placeholder para título, artista, link do YouTube e blocos de letras em ordem correta.</p>
+          <h3>Blocos da letra</h3>
+          <p class="admin-muted">Primeiro, selecione quantos blocos o jogo vai ter. Depois, preencha os blocos abaixo na ordem correta.</p>
         </div>
-        <label for="orderPlaceholder">Blocos da letra</label>
-        <textarea id="orderPlaceholder" rows="7" placeholder="Exemplo:\nBom dia, boa tarde\nBoa noite amor\nMinha vida inteira..." disabled></textarea>
+        <label for="lyricBlockCount">Quantidade de blocos</label>
+        <input id="lyricBlockCount" name="lyricBlockCount" type="number" min="1" step="1" inputmode="numeric" placeholder="Exemplo: 4" />
+        <p id="lyricBlockFeedback" class="field-feedback" aria-live="polite"></p>
+        <div id="lyricBlockFields" class="lyric-block-fields"></div>
         <button class="primary-action" type="button" disabled>Salvar jogo de ordenar letras</button>
       </section>
     `,
@@ -193,24 +197,42 @@ function renderSongModeFields() {
       <section class="song-mode-card">
         <div>
           <p class="eyebrow">Completar letras</p>
-          <h3>Campos para lacunas</h3>
-          <p class="admin-muted">Placeholder para letras com espaços em branco e respostas esperadas por lacuna.</p>
+          <h3>Lacunas da letra</h3>
+          <p class="admin-muted">Adicione a letra com as dicas, clique em preparar letra, escolha as palavras que devem virar lacunas e depois envie a seleção.</p>
         </div>
-        <label for="clozePlaceholder">Letra com lacunas</label>
-        <textarea id="clozePlaceholder" rows="7" placeholder="Exemplo:\nEu moro em ____\nResposta esperada: Lisboa" disabled></textarea>
-        <button class="primary-action" type="button" disabled>Salvar jogo de completar letras</button>
+        <label for="completeLyricsText">Letra da música</label>
+        <textarea id="completeLyricsText" rows="8" placeholder="Cole a letra completa aqui, incluindo as dicas"></textarea>
+        <label class="confirm-row complete-global-hints-row" for="completeUsesGlobalHints">
+          <input id="completeUsesGlobalHints" type="checkbox" />
+          <span>As dicas são globais para a atividade inteira.</span>
+        </label>
+        <label id="completeGlobalHintsField" hidden>
+          <span>Dicas globais</span>
+          <input id="completeGlobalHints" name="completeGlobalHints" type="text" placeholder="Exemplo: ser (3x), chamar, subir, ficar" />
+        </label>
+        <div class="game-actions">
+          <button id="stageCompleteLyrics" class="secondary-action" type="button">Preparar letra</button>
+          <button id="submitCompleteLyricsBlanks" class="primary-action" type="button" disabled>Enviar lacunas</button>
+        </div>
+        <p id="completeLyricsFeedback" class="field-feedback" aria-live="polite"></p>
+        <div id="completeLyricsPreview" class="cloze-lyrics admin-cloze-preview" hidden></div>
       </section>
     `,
     "word-select": `
       <section class="song-mode-card">
         <div>
           <p class="eyebrow">Selecionar palavras</p>
-          <h3>Campos para seleção lexical</h3>
-          <p class="admin-muted">Placeholder para texto completo, categoria gramatical e palavras corretas para seleção.</p>
+          <h3>Seleção de palavras</h3>
+          <p class="admin-muted">Adicione a letra, clique em preparar letra, escolha as palavras que os estudantes devem selecionar e depois envie a seleção.</p>
         </div>
-        <label for="selectPlaceholder">Palavras-alvo</label>
-        <textarea id="selectPlaceholder" rows="7" placeholder="Exemplo:\nCategoria: verbos no passado\nPalavras corretas: fui, cantou, chegou" disabled></textarea>
-        <button class="primary-action" type="button" disabled>Salvar jogo de selecionar palavras</button>
+        <label for="wordSelectLyrics">Letra da música</label>
+        <textarea id="wordSelectLyrics" rows="8" placeholder="Cole a letra completa aqui"></textarea>
+        <div class="game-actions">
+          <button id="stageWordSelectLyrics" class="secondary-action" type="button">Preparar letra</button>
+          <button id="submitWordSelectionTargets" class="primary-action" type="button" disabled>Enviar seleção</button>
+        </div>
+        <p id="wordSelectFeedback" class="field-feedback" aria-live="polite"></p>
+        <div id="wordSelectPreview" class="selectable-lyrics admin-selectable-preview" hidden></div>
       </section>
     `
   };
@@ -224,6 +246,219 @@ function renderSongModeFields() {
   setupTopicCombobox();
   setupSelectComboFields(songModeFields);
   setupThumbnailUploadPreview();
+  if (mode === "lyric-order") setupLyricOrderBlockBuilder();
+  if (mode === "complete-lyrics") setupCompleteLyricsBuilder();
+  if (mode === "word-select") setupWordSelectBuilder();
+}
+
+function setupCompleteLyricsBuilder() {
+  const lyricsInput = document.querySelector("#completeLyricsText");
+  const stageButton = document.querySelector("#stageCompleteLyrics");
+  const submitButton = document.querySelector("#submitCompleteLyricsBlanks");
+  const feedback = document.querySelector("#completeLyricsFeedback");
+  if (!lyricsInput || !stageButton || !submitButton || !feedback) return;
+
+  state.completeLyricsTokens = [];
+  setupCompleteGlobalHintsToggle();
+  stageButton.addEventListener("click", () => stageCompleteLyrics(lyricsInput, submitButton, feedback));
+  submitButton.addEventListener("click", () => submitCompleteLyricsBlanks(feedback));
+}
+
+function setupCompleteGlobalHintsToggle() {
+  const checkbox = document.querySelector("#completeUsesGlobalHints");
+  const field = document.querySelector("#completeGlobalHintsField");
+  const input = document.querySelector("#completeGlobalHints");
+  if (!checkbox || !field || !input) return;
+
+  checkbox.addEventListener("change", () => {
+    field.hidden = !checkbox.checked;
+    input.required = checkbox.checked;
+    if (!checkbox.checked) input.value = "";
+  });
+}
+
+function stageCompleteLyrics(lyricsInput, submitButton, feedback) {
+  const lyrics = lyricsInput.value.trim();
+  if (!lyrics) {
+    feedback.textContent = "Cole a letra antes de prepará-la.";
+    return;
+  }
+
+  state.completeLyricsTokens = parseAdminSelectableLyrics(lyrics);
+  submitButton.disabled = false;
+  feedback.textContent = "Letra preparada. Clique nas palavras que devem virar lacunas.";
+  renderAdminCompleteLyrics();
+}
+
+function renderAdminCompleteLyrics() {
+  const preview = document.querySelector("#completeLyricsPreview");
+  if (!preview) return;
+  preview.hidden = false;
+  preview.innerHTML = "";
+
+  state.completeLyricsTokens.forEach((token) => {
+    if (token.type === "text") {
+      preview.append(document.createTextNode(token.value));
+      return;
+    }
+
+    if (token.selected) {
+      const wrapper = document.createElement("span");
+      wrapper.className = "cloze-blank admin-cloze-blank";
+      wrapper.innerHTML = `
+        <input type="text" placeholder="${token.value}" disabled aria-label="Lacuna para ${token.value}" />
+        <span class="blank-result" aria-label="Remover lacuna">x</span>
+      `;
+      wrapper.addEventListener("click", () => toggleAdminCompleteBlank(token.id));
+      preview.append(wrapper);
+      return;
+    }
+
+    const word = document.createElement("button");
+    word.type = "button";
+    word.className = "selectable-word";
+    word.textContent = token.value;
+    word.setAttribute("aria-pressed", "false");
+    word.addEventListener("click", () => toggleAdminCompleteBlank(token.id));
+    preview.append(word);
+  });
+}
+
+function toggleAdminCompleteBlank(tokenId) {
+  const token = state.completeLyricsTokens.find((item) => item.id === tokenId);
+  if (!token || token.type !== "word") return;
+  token.selected = !token.selected;
+  renderAdminCompleteLyrics();
+}
+
+function submitCompleteLyricsBlanks(feedback) {
+  const blankCount = state.completeLyricsTokens.filter((token) => token.type === "word" && token.selected).length;
+  if (!blankCount) {
+    feedback.textContent = "Selecione pelo menos uma palavra para virar lacuna.";
+    return;
+  }
+  feedback.textContent = `${blankCount} ${blankCount === 1 ? "lacuna selecionada" : "lacunas selecionadas"} para o jogo.`;
+}
+
+function setupWordSelectBuilder() {
+  const lyricsInput = document.querySelector("#wordSelectLyrics");
+  const stageButton = document.querySelector("#stageWordSelectLyrics");
+  const submitButton = document.querySelector("#submitWordSelectionTargets");
+  const feedback = document.querySelector("#wordSelectFeedback");
+  if (!lyricsInput || !stageButton || !submitButton || !feedback) return;
+
+  state.wordSelectTokens = [];
+  stageButton.addEventListener("click", () => stageWordSelectLyrics(lyricsInput, submitButton, feedback));
+  submitButton.addEventListener("click", () => submitWordSelectionTargets(feedback));
+}
+
+function stageWordSelectLyrics(lyricsInput, submitButton, feedback) {
+  const lyrics = lyricsInput.value.trim();
+  if (!lyrics) {
+    feedback.textContent = "Cole a letra antes de prepará-la.";
+    return;
+  }
+
+  state.wordSelectTokens = parseAdminSelectableLyrics(lyrics);
+  submitButton.disabled = false;
+  feedback.textContent = "Letra preparada. Clique nas palavras que os estudantes devem selecionar.";
+  renderAdminSelectableLyrics();
+}
+
+function parseAdminSelectableLyrics(text) {
+  const tokens = [];
+  const wordPattern = /[\p{L}\p{M}\p{N}]+(?:-[\p{L}\p{M}\p{N}]+)*/gu;
+  let cursor = 0;
+  let match;
+
+  while ((match = wordPattern.exec(text)) !== null) {
+    if (match.index > cursor) tokens.push({ type: "text", value: text.slice(cursor, match.index) });
+    tokens.push({
+      type: "word",
+      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      value: match[0],
+      selected: false
+    });
+    cursor = wordPattern.lastIndex;
+  }
+
+  if (cursor < text.length) tokens.push({ type: "text", value: text.slice(cursor) });
+  return tokens;
+}
+
+function renderAdminSelectableLyrics() {
+  const preview = document.querySelector("#wordSelectPreview");
+  if (!preview) return;
+  preview.hidden = false;
+  preview.innerHTML = "";
+
+  state.wordSelectTokens.forEach((token) => {
+    if (token.type === "text") {
+      preview.append(document.createTextNode(token.value));
+      return;
+    }
+
+    const word = document.createElement("button");
+    word.type = "button";
+    word.className = "selectable-word";
+    word.textContent = token.value;
+    word.setAttribute("aria-pressed", String(token.selected));
+    if (token.selected) word.classList.add("is-selected");
+    word.addEventListener("click", () => toggleAdminSelectableWord(token.id));
+    preview.append(word);
+  });
+}
+
+function toggleAdminSelectableWord(tokenId) {
+  const token = state.wordSelectTokens.find((item) => item.id === tokenId);
+  if (!token || token.type !== "word") return;
+  token.selected = !token.selected;
+  renderAdminSelectableLyrics();
+}
+
+function submitWordSelectionTargets(feedback) {
+  const selectedCount = state.wordSelectTokens.filter((token) => token.type === "word" && token.selected).length;
+  if (!selectedCount) {
+    feedback.textContent = "Selecione pelo menos uma palavra antes de enviar.";
+    return;
+  }
+  feedback.textContent = `${selectedCount} ${selectedCount === 1 ? "palavra selecionada" : "palavras selecionadas"} para o jogo.`;
+}
+
+function setupLyricOrderBlockBuilder() {
+  const countInput = document.querySelector("#lyricBlockCount");
+  const fields = document.querySelector("#lyricBlockFields");
+  const feedback = document.querySelector("#lyricBlockFeedback");
+  if (!countInput || !fields || !feedback) return;
+
+  countInput.addEventListener("input", () => renderLyricOrderBlocks(countInput, fields, feedback));
+}
+
+function renderLyricOrderBlocks(countInput, fields, feedback) {
+  const rawCount = countInput.value.trim();
+  fields.innerHTML = "";
+
+  if (!rawCount) {
+    feedback.textContent = "";
+    return;
+  }
+
+  const blockCount = Number(rawCount);
+  if (!Number.isInteger(blockCount) || blockCount < 1) {
+    feedback.textContent = "Informe um número inteiro positivo.";
+    return;
+  }
+
+  feedback.textContent = `${blockCount} ${blockCount === 1 ? "bloco" : "blocos"} para preencher.`;
+  for (let index = 1; index <= blockCount; index += 1) {
+    const label = document.createElement("label");
+    label.className = "lyric-block-field";
+    label.innerHTML = `
+      <span>Bloco #${index}</span>
+      <textarea name="lyricBlock${index}" rows="3" placeholder="Bloco #${index}" required></textarea>
+    `;
+    fields.append(label);
+  }
 }
 
 function setupSelectComboFields(root = document) {
