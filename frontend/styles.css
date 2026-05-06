@@ -649,6 +649,117 @@ h2 {
   font-weight: 900;
 }
 
+.song-builder-form {
+  gap: 16px;
+}
+
+.song-mode-fields {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.song-mode-card {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.song-mode-card h3 {
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+}
+
+.song-mode-card .primary-action {
+  width: fit-content;
+  padding: 0 18px;
+}
+
+.song-common-fields {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.song-common-fields label,
+.field-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.field-feedback {
+  min-height: 22px;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.combo-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+}
+
+.combo-field input {
+  border-radius: 8px 0 0 8px;
+  border-right: 0;
+}
+
+.combo-toggle {
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 0 8px 8px 0;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.combo-options {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  display: grid;
+  max-height: 220px;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.combo-option {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  text-align: left;
+}
+
+.combo-option:hover,
+.combo-option:focus-visible {
+  background: rgba(29, 119, 115, 0.12);
+  outline: none;
+}
+
 .inline-form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1219,7 +1330,8 @@ button:disabled {
   .game-facts,
   .lyric-chunk,
   .progress-row,
-  .inline-form-row {
+  .inline-form-row,
+  .field-grid {
     grid-template-columns: 1fr;
   }
 

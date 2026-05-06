@@ -78,24 +78,15 @@
             <p class="eyebrow">Musicas</p>
             <h2>Adicionar nova musica</h2>
           </div>
-          <form class="admin-form placeholder-form" aria-disabled="true">
-            <label for="songTitle">Titulo</label>
-            <input id="songTitle" type="text" placeholder="Placeholder" disabled />
-
-            <label for="songArtist">Artista</label>
-            <input id="songArtist" type="text" placeholder="Placeholder" disabled />
-
+          <form id="songBuilderForm" class="admin-form song-builder-form">
             <label for="songGameMode">Modo de jogo</label>
-            <select id="songGameMode" disabled>
-              <option>Ordenar letras</option>
-              <option>Completar letras</option>
-              <option>Selecionar palavras</option>
+            <select id="songGameMode" name="gameMode" required>
+              <option value="">Selecione um modo</option>
+              <option value="lyric-order">Ordenar letras</option>
+              <option value="complete-lyrics">Completar letras</option>
+              <option value="word-select">Selecionar palavras</option>
             </select>
-
-            <label for="songLyrics">Conteudo do jogo</label>
-            <textarea id="songLyrics" rows="7" placeholder="Placeholder para o editor especifico do modo de jogo" disabled></textarea>
-
-            <button class="primary-action" type="button" disabled>Salvar musica</button>
+            <div id="songModeFields" class="song-mode-fields" aria-live="polite"></div>
           </form>
         </div>
       </section>

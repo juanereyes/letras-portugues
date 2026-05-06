@@ -17,11 +17,15 @@ const promoteConfirm = document.querySelector("#promoteConfirm");
 const confirmPromoteButton = document.querySelector("#confirmPromote");
 const promoteModalFeedback = document.querySelector("#promoteModalFeedback");
 const promoteFeedback = document.querySelector("#promoteFeedback");
+const songGameMode = document.querySelector("#songGameMode");
+const songModeFields = document.querySelector("#songModeFields");
 const userStoreKey = "ptMusicUser";
 
 const state = {
   user: loadUser(),
-  songs: []
+  songs: [],
+  topicOptions: [],
+  topicComboOpen: false
 };
 
 function loadUser() {
@@ -87,6 +91,9 @@ function setupForms() {
     event.preventDefault();
     await promoteAccount();
   });
+
+  songGameMode.addEventListener("change", renderSongModeFields);
+  renderSongModeFields();
 }
 
 function openPromoteModal() {
@@ -145,7 +152,7 @@ function renderProgress(progress) {
   rows
     .sort((a, b) => a.songTitle.localeCompare(b.songTitle, "pt-BR"))
     .forEach((row) => {
-    const item = document.createElement("div");
+      const item = document.createElement("div");
       item.className = "progress-row admin-progress-row";
       item.innerHTML = `
         <span class="progress-song">
@@ -159,6 +166,188 @@ function renderProgress(progress) {
       list.append(item);
     });
   progressResults.append(list);
+}
+
+function renderSongModeFields() {
+  const mode = songGameMode.value;
+  if (!mode) {
+    songModeFields.innerHTML = `<p class="empty-state">Selecione um modo de jogo para configurar os campos da musica.</p>`;
+    return;
+  }
+
+  const templates = {
+    "lyric-order": `
+      <section class="song-mode-card">
+        <div>
+          <p class="eyebrow">Ordenar letras</p>
+          <h3>Campos para blocos reordenaveis</h3>
+          <p class="admin-muted">Placeholder para titulo, artista, link do YouTube e blocos de letras em ordem correta.</p>
+        </div>
+        <label for="orderPlaceholder">Blocos da letra</label>
+        <textarea id="orderPlaceholder" rows="7" placeholder="Exemplo:\nBom dia, boa tarde\nBoa noite amor\nMinha vida inteira..." disabled></textarea>
+        <button class="primary-action" type="button" disabled>Salvar jogo de ordenar letras</button>
+      </section>
+    `,
+    "complete-lyrics": `
+      <section class="song-mode-card">
+        <div>
+          <p class="eyebrow">Completar letras</p>
+          <h3>Campos para lacunas</h3>
+          <p class="admin-muted">Placeholder para letras com espacos em branco e respostas esperadas por lacuna.</p>
+        </div>
+        <label for="clozePlaceholder">Letra com lacunas</label>
+        <textarea id="clozePlaceholder" rows="7" placeholder="Exemplo:\nEu moro em ____\nResposta esperada: Lisboa" disabled></textarea>
+        <button class="primary-action" type="button" disabled>Salvar jogo de completar letras</button>
+      </section>
+    `,
+    "word-select": `
+      <section class="song-mode-card">
+        <div>
+          <p class="eyebrow">Selecionar palavras</p>
+          <h3>Campos para selecao lexical</h3>
+          <p class="admin-muted">Placeholder para texto completo, categoria gramatical e palavras corretas para selecao.</p>
+        </div>
+        <label for="selectPlaceholder">Palavras-alvo</label>
+        <textarea id="selectPlaceholder" rows="7" placeholder="Exemplo:\nCategoria: verbos no passado\nPalavras corretas: fui, cantou, chegou" disabled></textarea>
+        <button class="primary-action" type="button" disabled>Salvar jogo de selecionar palavras</button>
+      </section>
+    `
+  };
+
+  songModeFields.innerHTML = `
+    ${renderCommonSongFields()}
+    ${templates[mode]}
+  `;
+  setupYoutubeWatchLinkValidation();
+  setupTopicCombobox();
+}
+
+function renderCommonSongFields() {
+  return `
+    <section class="song-common-fields">
+      <div class="field-grid">
+        <label>
+          <span>Titulo</span>
+          <input id="songTitle" name="songTitle" type="text" placeholder="Exemplo: Bom dia, boa tarde, boa noite amor" required />
+        </label>
+        <label>
+          <span>Autor</span>
+          <input id="songAuthor" name="songAuthor" type="text" placeholder="Exemplo: Jorge Ben Jor" required />
+        </label>
+        <label>
+          <span>Curso</span>
+          <select id="songCourse" name="course" required>
+            <option value="">Selecione um curso</option>
+            <option>Portugues I</option>
+            <option>Portugues II</option>
+            <option>Portugues III</option>
+            <option>Portugues IV</option>
+          </select>
+        </label>
+        <label>
+          <span>Topico</span>
+          <span class="combo-field">
+            <input id="songTopic" name="topic" type="text" placeholder="Exemplo: vocabulario - partes do corpo, Pretérito perfeito" role="combobox" aria-expanded="false" aria-controls="songTopicOptions" autocomplete="off" required />
+            <button id="songTopicToggle" class="combo-toggle" type="button" aria-label="Mostrar topicos">⌄</button>
+            <div id="songTopicOptions" class="combo-options" role="listbox" hidden></div>
+          </span>
+        </label>
+      </div>
+      <label>
+        <span>Link do YouTube</span>
+        <input id="youtubeWatchLink" name="youtubeWatchLink" type="url" placeholder="https://www.youtube.com/watch?v=<codigo>" required />
+      </label>
+      <p id="youtubeWatchFeedback" class="field-feedback" aria-live="polite"></p>
+    </section>
+  `;
+}
+
+function setupTopicCombobox() {
+  const input = document.querySelector("#songTopic");
+  const toggle = document.querySelector("#songTopicToggle");
+  const options = document.querySelector("#songTopicOptions");
+  if (!input || !toggle || !options) return;
+
+  state.topicOptions = getTopicOptions();
+  input.addEventListener("input", () => renderTopicOptions(input, options, true));
+  input.addEventListener("focus", () => renderTopicOptions(input, options, true));
+  toggle.addEventListener("click", () => {
+    state.topicComboOpen = options.hidden;
+    renderTopicOptions(input, options, state.topicComboOpen);
+    input.focus();
+  });
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".combo-field") && !options.contains(event.target)) {
+      closeTopicOptions(input, options);
+    }
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeTopicOptions(input, options);
+  });
+}
+
+function getTopicOptions() {
+  return [...new Map(state.songs.map((song) => [song.topic.toLocaleLowerCase("pt-BR"), song.topic])).values()].sort((a, b) =>
+    a.localeCompare(b, "pt-BR")
+  );
+}
+
+function renderTopicOptions(input, options, shouldOpen) {
+  const query = input.value.trim().toLocaleLowerCase("pt-BR");
+  const matches = state.topicOptions.filter((topic) => topic.toLocaleLowerCase("pt-BR").includes(query));
+  options.innerHTML = "";
+
+  matches.forEach((topic) => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "combo-option";
+    option.setAttribute("role", "option");
+    option.textContent = topic;
+    option.addEventListener("click", () => {
+      input.value = topic;
+      closeTopicOptions(input, options);
+    });
+    options.append(option);
+  });
+
+  const hasOptions = matches.length > 0;
+  options.hidden = !shouldOpen || !hasOptions;
+  input.setAttribute("aria-expanded", String(!options.hidden));
+}
+
+function closeTopicOptions(input, options) {
+  options.hidden = true;
+  input.setAttribute("aria-expanded", "false");
+}
+
+function setupYoutubeWatchLinkValidation() {
+  const input = document.querySelector("#youtubeWatchLink");
+  const feedback = document.querySelector("#youtubeWatchFeedback");
+  if (!input || !feedback) return;
+
+  input.addEventListener("blur", () => normalizeYoutubeWatchLink(input, feedback));
+  input.addEventListener("input", () => {
+    input.setCustomValidity("");
+    feedback.textContent = "";
+  });
+}
+
+function normalizeYoutubeWatchLink(input, feedback) {
+  const rawValue = input.value.trim();
+  if (!rawValue) return;
+
+  const croppedValue = rawValue.split("&")[0];
+  input.value = croppedValue;
+
+  const isWatchLink = /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+$/.test(croppedValue);
+  if (!isWatchLink) {
+    input.setCustomValidity("Use um link no formato https://www.youtube.com/watch?v=<codigo>.");
+    feedback.textContent = "Use um link no formato https://www.youtube.com/watch?v=<codigo>.";
+    return;
+  }
+
+  input.setCustomValidity("");
+  feedback.textContent = rawValue === croppedValue ? "Link valido." : "Link valido. Parametros extras foram removidos.";
 }
 
 function getScoreClass(score) {
